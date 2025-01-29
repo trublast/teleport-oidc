@@ -509,6 +509,14 @@ func NewServer(cfg *InitConfig, opts ...ServerOption) (*Server, error) {
 	if _, ok := as.getCache(); !ok {
 		log.Warn("Auth server starting without cache (may have negative performance implications).")
 	}
+	oas, err := NewOIDCAuthService(&OIDCAuthServiceConfig{
+		Auth:    &as,
+		Emitter: as.emitter,
+	})
+	if err != nil {
+		return nil, trace.Wrap(err)
+	}
+	as.oidcAuthService = oas
 
 	return &as, nil
 }
@@ -721,7 +729,8 @@ type Server struct {
 	cancelFunc context.CancelFunc
 
 	samlAuthService SAMLService
-	oidcAuthService OIDCService
+	// oidcAuthService OIDCService
+	oidcAuthService *OIDCAuthService
 
 	releaseService release.Client
 
@@ -883,9 +892,9 @@ func (a *Server) SetSAMLService(svc SAMLService) {
 // SetOIDCService registers svc as the OIDCService that provides the OIDC
 // connector implementation. If a OIDCService has already been registered, this
 // will override the previous registration.
-func (a *Server) SetOIDCService(svc OIDCService) {
-	a.oidcAuthService = svc
-}
+// func (a *Server) SetOIDCService(svc OIDCService) {
+// 	a.oidcAuthService = svc
+// }
 
 // SetLicense sets the license
 func (a *Server) SetLicense(license *liblicense.License) {
