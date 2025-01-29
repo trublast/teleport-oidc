@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-export type TrustedDevice = {
-  id: string;
-  assetTag: string;
-  osType: TrustedDeviceOSType;
-  enrollStatus: string;
-};
+// export type TrustedDevice = {
+//   id: string;
+//   assetTag: string;
+//   osType: TrustedDeviceOSType;
+//   enrollStatus: string;
+// };
 
-export type TrustedDeviceOSType = 'Windows' | 'Linux' | 'macOS';
+// export type TrustedDeviceOSType = 'Windows' | 'Linux' | 'macOS';
 
-export type TrustedDeviceResponse = {
-  items: TrustedDevice[];
-  startKey: string;
-};
+// export type TrustedDeviceResponse = {
+//   items: TrustedDevice[];
+//   startKey: string;
+// };
 
-export type DeviceListProps = {
-  items: TrustedDeviceResponse['items'];
-  pageSize?: number;
-  fetchStatus?: 'loading' | 'disabled' | '';
-  fetchData?: () => void;
-};
+// export type DeviceListProps = {
+//   items: TrustedDeviceResponse['items'];
+//   pageSize?: number;
+//   fetchStatus?: 'loading' | 'disabled' | '';
+//   fetchData?: () => void;
+// };
