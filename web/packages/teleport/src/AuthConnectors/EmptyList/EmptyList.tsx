@@ -21,14 +21,14 @@ import { AuthProviderType } from 'shared/services';
 
 import { ConnectorBox } from 'teleport/AuthConnectors/styles/ConnectorBox.styles';
 
-import {
-  LockedFeatureButton,
-  LockedFeatureContainer,
-} from 'teleport/AuthConnectors/styles/LockedFeatureContainer.styles';
+// import {
+//   LockedFeatureButton,
+//   LockedFeatureContainer,
+// } from 'teleport/AuthConnectors/styles/LockedFeatureContainer.styles';
 
 import getSsoIcon from 'teleport/AuthConnectors/ssoIcons/getSsoIcon';
 import { State as ResourceState } from 'teleport/components/useResources';
-import { CtaEvent } from 'teleport/services/userEvent';
+// import { CtaEvent } from 'teleport/services/userEvent';
 
 export default function EmptyList({ onCreate }: Props) {
   return (
@@ -43,13 +43,8 @@ export default function EmptyList({ onCreate }: Props) {
       </Text>
       <Flex flexWrap="wrap" justifyContent="center" mt={4} minWidth="224px">
         {renderGithubConnector(onCreate)}
-        <LockedFeatureContainer>
-          {renderLockedItem('oidc')}
-          {renderLockedItem('saml')}
-          <LockedFeatureButton event={CtaEvent.CTA_AUTH_CONNECTOR}>
-            Unlock OIDC & SAML with Teleport Enterprise
-          </LockedFeatureButton>
-        </LockedFeatureContainer>
+        {renderLockedItem('oidc')}
+        {renderLockedItem('saml')}
       </Flex>
     </Card>
   );
@@ -79,7 +74,7 @@ function renderGithubConnector(onCreate) {
 function renderLockedItem(kind: AuthProviderType) {
   const { desc, SsoIcon, info } = getSsoIcon(kind);
   return (
-    <ConnectorBox as="button" disabled={true}>
+    <ConnectorBox as="button">
       <Flex width="100%">
         <SsoIcon
           fontSize="50px"
