@@ -1,0 +1,35 @@
+#
+# Example resource for a SAML connector
+# This connector can be used for Keycloak SAML endpoint
+#
+# To create connector run:
+# tctl create -f saml-keycloak-connector.yaml
+#
+# To read connector run:
+# tctl get saml/keycloak-saml
+#
+# To delete connector run:
+# tctl get saml/keycloak-saml
+#
+kind: saml
+version: v2
+metadata:
+  # the name of the connector
+  name: keycloak-saml
+spec:
+  # connector display name that will be appended to the title of "Login with"
+  display: KEYCLOAK-SAML
+  # SAML provider will make a callback to this URL after successful authentication
+  # cluster-url is the address the cluster UI is reachable at.
+  # The last segment of the URL must be identical to the connector metadata name.
+  acs: https://<teleport-cluster-url>/v1/webapi/saml/acs/keycloak
+  attributes_to_roles:
+  - name: groups
+    roles:
+    - editor
+    value: /admins
+  # Provides a path to the IdP metadata.
+  entity_descriptor_url: https://<keycloak-server-fqdn>/realms/<realm-name>/protocol/saml/descriptor
+  entity_descriptor: ""
+  issuer: ""
+  sso: ""
