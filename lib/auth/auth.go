@@ -518,6 +518,14 @@ func NewServer(cfg *InitConfig, opts ...ServerOption) (*Server, error) {
 	}
 	as.oidcAuthService = oas
 
+	// Plug in SAML auth service
+	sas := NewSAMLAuthService(&SAMLAuthServiceConfig{
+		Auth:                   &as,
+		Emitter:                as.emitter,
+		AssertionReplayService: as.Unstable.AssertionReplayService,
+	})
+	as.samlAuthService = sas
+
 	return &as, nil
 }
 
@@ -728,8 +736,7 @@ type Server struct {
 	closeCtx   context.Context
 	cancelFunc context.CancelFunc
 
-	samlAuthService SAMLService
-	// oidcAuthService OIDCService
+	samlAuthService *SAMLAuthService
 	oidcAuthService *OIDCAuthService
 
 	releaseService release.Client
@@ -885,9 +892,9 @@ type Server struct {
 // SetSAMLService registers svc as the SAMLService that provides the SAML
 // connector implementation. If a SAMLService has already been registered, this
 // will override the previous registration.
-func (a *Server) SetSAMLService(svc SAMLService) {
-	a.samlAuthService = svc
-}
+// func (a *Server) SetSAMLService(svc SAMLService) {
+// 	a.samlAuthService = svc
+// }
 
 // SetOIDCService registers svc as the OIDCService that provides the OIDC
 // connector implementation. If a OIDCService has already been registered, this

@@ -113,6 +113,21 @@ const (
 	// The bucket starts full, prefilled for a week.
 	assistantLimiterCapacity = assistantTokensPerHour * 24 * 7
 )
+const (
+	// ssoLoginConsoleErr is a generic error message to hide revealing sso login failure msgs.
+	ssoLoginConsoleErr = "Failed to login. Please check Teleport's log for more details."
+	metaRedirectHTML   = `
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Teleport Redirection Service</title>
+		<meta http-equiv="cache-control" content="no-cache"/>
+		<meta http-equiv="refresh" content="0;URL='{{.}}'" />
+	</head>
+	<body></body>
+</html>
+`
+)
 
 // healthCheckAppServerFunc defines a function used to perform a health check
 // to AppServer that can handle application requests (based on cluster name and
@@ -793,10 +808,10 @@ func (h *Handler) bindDefaultEndpoints() {
 	h.POST("/webapi/oidc/login/console", httplib.MakeHandler(h.oidcLoginConsole))
 
 	// SAML 2.0 handlers
-	// h.POST("/webapi/saml/acs", h.WithMetaRedirect(h.samlACS))
-	// h.POST("/webapi/saml/acs/:connector", h.WithMetaRedirect(h.samlACS))
-	// h.GET("/webapi/saml/sso", h.WithMetaRedirect(h.samlSSO))
-	// h.POST("/webapi/saml/login/console", httplib.MakeHandler(h.samlSSOConsole))
+	h.POST("/webapi/saml/acs", h.WithMetaRedirect(h.samlACS))
+	h.POST("/webapi/saml/acs/:connector", h.WithMetaRedirect(h.samlACS))
+	h.GET("/webapi/saml/sso", h.WithMetaRedirect(h.samlSSO))
+	h.POST("/webapi/saml/login/console", httplib.MakeHandler(h.samlSSOConsole))
 
 	// Github connector handlers
 	h.GET("/webapi/github/login/web", h.WithRedirect(h.githubLoginWeb))
