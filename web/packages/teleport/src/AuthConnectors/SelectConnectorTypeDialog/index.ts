@@ -1,5 +1,5 @@
 /*
-Copyright 2020-2021 Gravitational, Inc.
+Copyright Flant JSC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,11 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import github from './github.yaml?raw';
-import oidc from './oidc.yaml?raw';
-import saml from './saml.yaml?raw';
+import SelectConnectorTypeDialog from './SelectConnectorTypeDialog';
+export default SelectConnectorTypeDialog;
 
-const templates = { github, oidc, saml };
-
-export { github, oidc, saml };
-export default templates;

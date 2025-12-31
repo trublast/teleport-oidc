@@ -14,32 +14,47 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Card, Flex, Text } from 'design';
+import { Flex, Text, ButtonSecondary } from 'design';
 import { AuthProviderType } from 'shared/services';
+import Dialog, {
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from 'design/Dialog';
 
 import { ConnectorBox } from 'teleport/AuthConnectors/styles/ConnectorBox.styles';
-
-
 import getSsoIcon from 'teleport/AuthConnectors/ssoIcons/getSsoIcon';
-import { State as ResourceState } from 'teleport/components/useResources';
+import { KindAuthConnectors } from 'teleport/services/resources';
 
-export default function EmptyList({ onCreate }: Props) {
+export default function SelectConnectorTypeDialog({
+  onSelect,
+  onClose,
+}: Props) {
   return (
-    <Card
-      color="text.main"
-      p={5}
-      textAlign="center"
-      style={{ boxShadow: 'none' }}
+    <Dialog
+      dialogCss={() => ({ maxWidth: '800px', width: '100%' })}
+      disableEscapeKeyDown={false}
+      onClose={onClose}
+      open={true}
     >
-      <Text typography="h3" textAlign="center">
-        Select a service provider below
-      </Text>
-      <Flex flexWrap="wrap" justifyContent="center" mt={4} minWidth="224px">
-        {renderConnectorItem('github', () => onCreate('github'))}
-        {renderConnectorItem('oidc',   () => onCreate('oidc'))}
-        {renderConnectorItem('saml',   () => onCreate('saml'))}
-      </Flex>
-    </Card>
+      <DialogHeader>
+        <DialogTitle>Select Connector Type</DialogTitle>
+      </DialogHeader>
+      <DialogContent>
+        <Text typography="paragraph" mb={4} textAlign="center">
+          Choose the type of authentication connector you want to create
+        </Text>
+        <Flex flexWrap="wrap" justifyContent="center" gap={3}>
+          {renderConnectorItem('github', () => onSelect('github'))}
+          {renderConnectorItem('oidc',   () => onSelect('oidc'))}
+          {renderConnectorItem('saml',   () => onSelect('saml'))}
+        </Flex>
+      </DialogContent>
+      <DialogFooter>
+        <ButtonSecondary onClick={onClose}>Cancel</ButtonSecondary>
+      </DialogFooter>
+    </Dialog>
   );
 }
 
@@ -70,5 +85,7 @@ function renderConnectorItem(kind: AuthProviderType, onClick: () => void) {
 }
 
 type Props = {
-  onCreate: ResourceState['create'];
+  onSelect: (kind: KindAuthConnectors) => void;
+  onClose: () => void;
 };
+

@@ -74,6 +74,18 @@ class ResourceService {
       .then(res => makeResourceList<'github'>(res));
   }
 
+  fetchOidcConnectors() {
+    return api
+      .get(cfg.getOidcConnectorsUrl())
+      .then(res => makeResourceList<'oidc'>(res));
+  }
+
+  fetchSamlConnectors() {
+    return api
+      .get(cfg.getSamlConnectorsUrl())
+      .then(res => makeResourceList<'saml'>(res));
+  }
+
   async fetchRoles(params?: UrlListRolesParams): Promise<{
     items: RoleResource[];
     startKey: string;
@@ -118,6 +130,18 @@ class ResourceService {
       .then(res => makeResource<'github'>(res));
   }
 
+  createOidcConnector(content: string) {
+    return api
+      .post(cfg.getOidcConnectorsUrl(), { content })
+      .then(res => makeResource<'oidc'>(res));
+  }
+
+  createSamlConnector(content: string) {
+    return api
+      .post(cfg.getSamlConnectorsUrl(), { content })
+      .then(res => makeResource<'saml'>(res));
+  }
+
   updateTrustedCluster(name: string, content: string) {
     return api
       .put(cfg.getTrustedClustersUrl(name), { content })
@@ -136,6 +160,18 @@ class ResourceService {
       .then(res => makeResource<'github'>(res));
   }
 
+  updateOidcConnector(name: string, content: string) {
+    return api
+      .put(cfg.getOidcConnectorsUrl(name), { content })
+      .then(res => makeResource<'oidc'>(res));
+  }
+
+  updateSamlConnector(name: string, content: string) {
+    return api
+      .put(cfg.getSamlConnectorsUrl(name), { content })
+      .then(res => makeResource<'saml'>(res));
+  }
+
   deleteTrustedCluster(name: string) {
     return api.delete(cfg.getTrustedClustersUrl(name));
   }
@@ -146,6 +182,14 @@ class ResourceService {
 
   deleteGithubConnector(name: string) {
     return api.delete(cfg.getGithubConnectorsUrl(name));
+  }
+
+  deleteOidcConnector(name: string) {
+    return api.delete(cfg.getOidcConnectorsUrl(name));
+  }
+
+  deleteSamlConnector(name: string) {
+    return api.delete(cfg.getSamlConnectorsUrl(name));
   }
 }
 

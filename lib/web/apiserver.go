@@ -851,6 +851,16 @@ func (h *Handler) bindDefaultEndpoints() {
 	h.PUT("/webapi/github/:name", h.WithAuth(h.upsertGithubConnectorHandle))
 	h.DELETE("/webapi/github/:name", h.WithAuth(h.deleteGithubConnector))
 
+	h.GET("/webapi/oidc", h.WithAuth(h.getOidcConnectorsHandle))
+	h.POST("/webapi/oidc", h.WithAuth(h.upsertOidcConnectorHandle))
+	h.PUT("/webapi/oidc/:name", h.WithAuth(h.upsertOidcConnectorHandle))
+	h.DELETE("/webapi/oidc/:name", h.WithAuth(h.deleteOidcConnector))
+
+	h.GET("/webapi/saml", h.WithAuth(h.getSamlConnectorsHandle))
+	h.POST("/webapi/saml", h.WithAuth(h.upsertSamlConnectorHandle))
+	h.PUT("/webapi/saml/:name", h.WithAuth(h.upsertSamlConnectorHandle))
+	h.DELETE("/webapi/saml/:name", h.WithAuth(h.deleteSamlConnector))
+
 	h.GET("/webapi/trustedcluster", h.WithAuth(h.getTrustedClustersHandle))
 	h.POST("/webapi/trustedcluster", h.WithAuth(h.upsertTrustedClusterHandle))
 	h.PUT("/webapi/trustedcluster/:name", h.WithAuth(h.upsertTrustedClusterHandle))

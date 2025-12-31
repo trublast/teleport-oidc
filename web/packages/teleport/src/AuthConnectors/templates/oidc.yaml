@@ -1,0 +1,25 @@
+kind: oidc
+version: v3
+metadata:
+  name: new_oidc_connector
+spec:
+  # OIDC provider client ID
+  client_id: <client-id>
+  # OIDC provider client secret
+  client_secret: <client-secret>
+  # OIDC provider issuer URL
+  issuer_url: https://<oidc-provider-url>
+  # OIDC provider will make a callback to this URL after successful authentication
+  # cluster-url is the address the cluster UI is reachable at
+  redirect_url: 'https://<cluster-url>/v1/webapi/oidc/callback'
+  # connector display name that will be appended to the title of "Login with"
+  # button on the cluster login screen so it will say "Login with <display>"
+  display: OIDC
+  # mapping of OIDC claims to Teleport roles
+  claims_to_roles:
+    - claim: groups
+      value: admins
+      roles:
+        - 'access'
+        - 'editor'
+

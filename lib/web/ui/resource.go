@@ -98,6 +98,36 @@ func NewGithubConnectors(connectors []types.GithubConnector) ([]ResourceItem, er
 	return items, nil
 }
 
+// NewOidcConnectors creates resource item for each oidc connector.
+func NewOidcConnectors(connectors []types.OIDCConnector) ([]ResourceItem, error) {
+	items := make([]ResourceItem, 0, len(connectors))
+	for _, connector := range connectors {
+		item, err := NewResourceItem(connector)
+		if err != nil {
+			return nil, trace.Wrap(err)
+		}
+
+		items = append(items, *item)
+	}
+
+	return items, nil
+}
+
+// NewSamlConnectors creates resource item for each saml connector.
+func NewSamlConnectors(connectors []types.SAMLConnector) ([]ResourceItem, error) {
+	items := make([]ResourceItem, 0, len(connectors))
+	for _, connector := range connectors {
+		item, err := NewResourceItem(connector)
+		if err != nil {
+			return nil, trace.Wrap(err)
+		}
+
+		items = append(items, *item)
+	}
+
+	return items, nil
+}
+
 // NewTrustedClusters creates resource item for each cluster.
 func NewTrustedClusters(clusters []types.TrustedCluster) ([]ResourceItem, error) {
 	items := make([]ResourceItem, 0, len(clusters))

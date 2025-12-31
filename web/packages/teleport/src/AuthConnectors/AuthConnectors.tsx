@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, Box, Flex, Indicator, Link, Text } from 'design';
 
 import { FeatureBox, FeatureHeaderTitle } from 'teleport/components/Layout';
@@ -28,8 +28,10 @@ import {
 import EmptyList from './EmptyList';
 import ConnectorList from './ConnectorList';
 import DeleteConnectorDialog from './DeleteConnectorDialog';
+import SelectConnectorTypeDialog from './SelectConnectorTypeDialog';
 import useAuthConnectors, { State } from './useAuthConnectors';
 import templates from './templates';
+import { KindAuthConnectors } from 'teleport/services/resources';
 
 export default function Container() {
   const state = useAuthConnectors();
@@ -40,18 +42,34 @@ export function AuthConnectors(props: State) {
   const { attempt, items, remove, save } = props;
   const isEmpty = items.length === 0;
   const resources = useResources(items, templates);
+  const [showSelectDialog, setShowSelectDialog] = useState(false);
 
+  const getConnectorTypeName = (kind: string) => {
+    switch (kind) {
+      case 'oidc':
+        return 'OIDC';
+      case 'saml':
+        return 'SAML';
+      case 'github':
+      default:
+        return 'GitHub';
+    }
+  };
+
+  const connectorKind = resources.item?.kind || 'github';
+  const connectorTypeName = getConnectorTypeName(connectorKind);
   const title =
     resources.status === 'creating'
-      ? 'Creating a new github connector'
-      : 'Editing github connector';
+      ? `Creating a new ${connectorTypeName.toLowerCase()} connector`
+      : `Editing ${connectorTypeName.toLowerCase()} connector`;
   const description =
     'Auth connectors allow Teleport to authenticate users via an external identity source such as Okta, Microsoft Entra ID, GitHub, etc. This authentication method is commonly known as single sign-on (SSO).';
 
   function handleOnSave(content: string) {
     const name = resources.item.name;
     const isNew = resources.status === 'creating';
-    return save(name, content, isNew);
+    const kind = resources.item.kind as 'github' | 'oidc' | 'saml';
+    return save(name, content, isNew, kind);
   }
 
   return (
@@ -61,8 +79,8 @@ export function AuthConnectors(props: State) {
         <MobileDescription typography="subtitle1">
           {description}
         </MobileDescription>
-        <ResponsiveAddButton onClick={() => resources.create('github')}>
-          New GitHub Connector
+        <ResponsiveAddButton onClick={() => setShowSelectDialog(true)}>
+          New Connector
         </ResponsiveAddButton>
       </ResponsiveFeatureHeader>
       {attempt.status === 'failed' && <Alert children={attempt.statusText} />}
@@ -75,7 +93,7 @@ export function AuthConnectors(props: State) {
         <Flex alignItems="start">
           {isEmpty && (
             <Flex width="100%" justifyContent="center">
-              <EmptyList onCreate={() => resources.create('github')} />
+              <EmptyList onCreate={resources.create} />
             </Flex>
           )}
           <>
@@ -101,7 +119,7 @@ export function AuthConnectors(props: State) {
                 >
                   view our documentation
                 </Link>{' '}
-                on how to configure a GitHub connector.
+                on how to configure auth connectors.
               </Text>
             </DesktopDescription>
           </>
@@ -121,7 +139,19 @@ export function AuthConnectors(props: State) {
         <DeleteConnectorDialog
           name={resources.item.name}
           onClose={resources.disregard}
-          onDelete={() => remove(resources.item.name)}
+          onDelete={() => {
+            const kind = resources.item.kind as 'github' | 'oidc' | 'saml';
+            return remove(resources.item.name, kind);
+          }}
+        />
+      )}
+      {showSelectDialog && (
+        <SelectConnectorTypeDialog
+          onSelect={(kind: KindAuthConnectors) => {
+            setShowSelectDialog(false);
+            resources.create(kind);
+          }}
+          onClose={() => setShowSelectDialog(false)}
         />
       )}
     </FeatureBox>

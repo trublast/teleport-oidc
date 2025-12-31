@@ -18,17 +18,19 @@ import React from 'react';
 import { Box, ButtonPrimary, Flex, Text } from 'design';
 import { MenuIcon, MenuItem } from 'shared/components/MenuAction';
 import { GitHubIcon } from 'design/SVGIcon';
+import { AuthProviderType } from 'shared/services';
 
 import { State as ResourceState } from 'teleport/components/useResources';
 
 import { ResponsiveConnector } from 'teleport/AuthConnectors/styles/ConnectorBox.styles';
+import getSsoIcon from 'teleport/AuthConnectors/ssoIcons/getSsoIcon';
 
 import { State as AuthConnectorState } from '../useAuthConnectors';
 
 export default function ConnectorList({ items, onEdit, onDelete }: Props) {
   items = items || [];
   const $items = items.map(item => {
-    const { id, name } = item;
+    const { id, name, kind } = item;
     return (
       <ConnectorListItem
         key={id}
@@ -36,6 +38,7 @@ export default function ConnectorList({ items, onEdit, onDelete }: Props) {
         onEdit={onEdit}
         onDelete={onDelete}
         name={name}
+        kind={kind as AuthProviderType}
       />
     );
   });
@@ -47,9 +50,23 @@ export default function ConnectorList({ items, onEdit, onDelete }: Props) {
   );
 }
 
-function ConnectorListItem({ name, id, onEdit, onDelete }) {
+function ConnectorListItem({
+  name,
+  id,
+  kind,
+  onEdit,
+  onDelete,
+}: {
+  name: string;
+  id: string;
+  kind: AuthProviderType;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
   const onClickEdit = () => onEdit(id);
   const onClickDelete = () => onDelete(id);
+
+  const { SsoIcon } = getSsoIcon(kind);
 
   return (
     <ResponsiveConnector>
@@ -67,7 +84,11 @@ function ConnectorListItem({ name, id, onEdit, onDelete }) {
         style={{ textAlign: 'center' }}
       >
         <Box mb={3} mt={3}>
-          <GitHubIcon style={{ textAlign: 'center' }} size={50} />
+          {kind === 'github' ? (
+            <GitHubIcon style={{ textAlign: 'center' }} size={50} />
+          ) : (
+            <SsoIcon style={{ textAlign: 'center' }} />
+          )}
         </Box>
         <Text style={{ width: '100%' }} typography="body2" bold caps>
           {name}
