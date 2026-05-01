@@ -73,7 +73,7 @@ func TestMain(m *testing.M) {
 }
 
 type Suite struct {
-	clock        clockwork.FakeClock
+	clock        *clockwork.FakeClock
 	dataDir      string
 	authServer   *auth.TestAuthServer
 	tlsServer    *auth.TestTLSServer

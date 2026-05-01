@@ -54,7 +54,7 @@ type githubContext struct {
 	a           *Server
 	mockEmitter *eventstest.MockRecorderEmitter
 	b           backend.Backend
-	c           clockwork.FakeClock
+	c           *clockwork.FakeClock
 }
 
 func setupGithubContext(ctx context.Context, t *testing.T) *githubContext {

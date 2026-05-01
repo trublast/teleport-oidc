@@ -24,7 +24,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 
@@ -32,6 +31,7 @@ import (
 	"github.com/gravitational/teleport/api/types"
 	"github.com/gravitational/teleport/lib/services"
 	"github.com/gravitational/teleport/lib/services/suite"
+	"github.com/gravitational/teleport/lib/utils/clocki"
 )
 
 func TestCreateResourcesProvisionToken(t *testing.T) {
@@ -102,7 +102,7 @@ func runUserResourceTest(
 	}
 
 	// Advance the clock to let the users to expire.
-	tt.bk.Clock().(clockwork.FakeClock).Advance(2 * time.Minute)
+	clocki.Advance(tt.bk.Clock(), 2*time.Minute)
 	allUsers, err = s.GetUsers(withSecrets)
 	require.NoError(t, err)
 	require.Equal(t, len(allUsers), 0, "expected all users to expire")

@@ -37,7 +37,7 @@ import (
 )
 
 type testPack struct {
-	clock clockwork.FakeClock
+	clock *clockwork.FakeClock
 	mem   *memory.Memory
 }
 

@@ -78,6 +78,7 @@ import (
 	"github.com/gravitational/teleport/lib/services/suite"
 	"github.com/gravitational/teleport/lib/tlsca"
 	"github.com/gravitational/teleport/lib/utils"
+	"github.com/gravitational/teleport/lib/utils/clocki"
 )
 
 type testPack struct {
@@ -1166,9 +1167,7 @@ func TestServer_AugmentContextUserCertificates(t *testing.T) {
 	const devCred = "devicecred1"
 
 	advanceClock := func(d time.Duration) {
-		if fc, ok := testServer.Clock().(clockwork.FakeClock); ok {
-			fc.Advance(d)
-		}
+		clocki.Advance(testServer.Clock(), d)
 	}
 
 	tests := []struct {

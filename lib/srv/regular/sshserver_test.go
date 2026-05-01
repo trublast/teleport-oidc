@@ -116,7 +116,7 @@ type sshTestFixture struct {
 	up      *upack
 	signer  ssh.Signer
 	user    string
-	clock   clockwork.FakeClock
+	clock   *clockwork.FakeClock
 	testSrv *auth.TestServer
 }
 
@@ -1810,7 +1810,7 @@ func TestClientDisconnect(t *testing.T) {
 // fakeClock is a wrapper around clockwork.FakeClock that satisfies the timetoools.TimeProvider interface.
 // We are wrapping this so we can use the same mocked clock across the server and rate limiter.
 type fakeClock struct {
-	clock clockwork.FakeClock
+	clock *clockwork.FakeClock
 }
 
 func (fc fakeClock) UtcNow() time.Time {

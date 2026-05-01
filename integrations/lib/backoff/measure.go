@@ -25,7 +25,7 @@ import (
 	"github.com/jonboulle/clockwork"
 )
 
-func measure(ctx context.Context, clock clockwork.FakeClock, fn func() error) (time.Duration, error) {
+func measure(ctx context.Context, clock *clockwork.FakeClock, fn func() error) (time.Duration, error) {
 	done := make(chan struct{})
 	var dur time.Duration
 	var err error

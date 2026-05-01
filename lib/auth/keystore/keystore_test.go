@@ -332,7 +332,7 @@ func TestKeyStore(t *testing.T) {
 
 type testPack struct {
 	backends []*backendDesc
-	clock    clockwork.FakeClock
+	clock    *clockwork.FakeClock
 }
 
 type backendDesc struct {

@@ -19,6 +19,7 @@ package mongodb
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
 	"strings"
 
 	"github.com/gravitational/trace"
@@ -134,7 +135,11 @@ func (e *Engine) getConnectionOptions(ctx context.Context, sessionCtx *common.Se
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
-	authenticator, err := e.getAuthenticator(ctx, sessionCtx)
+	httpClient := clientCfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	authenticator, err := e.getAuthenticator(ctx, sessionCtx, httpClient)
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
@@ -155,12 +160,12 @@ func (e *Engine) getConnectionOptions(ctx context.Context, sessionCtx *common.Se
 				// client connecting to Teleport will get an error when they try
 				// to send its own metadata since client metadata is immutable.
 				&handshaker{},
-				&auth.HandshakeOptions{Authenticator: authenticator, HTTPClient: clientCfg.HTTPClient})
+				&auth.HandshakeOptions{Authenticator: authenticator})
 		}),
 	}, nil
 }
 
-func (e *Engine) getAuthenticator(ctx context.Context, sessionCtx *common.Session) (auth.Authenticator, error) {
+func (e *Engine) getAuthenticator(ctx context.Context, sessionCtx *common.Session, httpClient *http.Client) (auth.Authenticator, error) {
 	isAtlasDB := sessionCtx.Database.GetType() == types.DatabaseTypeMongoAtlas
 
 	// Currently, the MongoDB Atlas IAM Authentication doesn't work with IAM
@@ -171,12 +176,12 @@ func (e *Engine) getAuthenticator(ctx context.Context, sessionCtx *common.Sessio
 
 	switch {
 	case isAtlasDB && awsutils.IsRoleARN(sessionCtx.DatabaseUser):
-		return e.getAWSAuthenticator(ctx, sessionCtx)
+		return e.getAWSAuthenticator(ctx, sessionCtx, httpClient)
 	default:
 		e.Log.Debug("Authenticating to database using certificates.")
 		authenticator, err := auth.CreateAuthenticator(auth.MongoDBX509, &auth.Cred{
 			Username: x509Username(sessionCtx),
-		})
+		}, httpClient)
 		if err != nil {
 			return nil, trace.Wrap(err)
 		}
@@ -187,7 +192,7 @@ func (e *Engine) getAuthenticator(ctx context.Context, sessionCtx *common.Sessio
 
 // getAWSAuthenticator fetches the AWS credentials and initializes the MongoDB
 // authenticator.
-func (e *Engine) getAWSAuthenticator(ctx context.Context, sessionCtx *common.Session) (auth.Authenticator, error) {
+func (e *Engine) getAWSAuthenticator(ctx context.Context, sessionCtx *common.Session, httpClient *http.Client) (auth.Authenticator, error) {
 	e.Log.Debug("Authenticating to database using AWS IAM authentication.")
 
 	username, password, sessToken, err := e.Auth.GetAWSIAMCreds(ctx, sessionCtx)
@@ -202,7 +207,7 @@ func (e *Engine) getAWSAuthenticator(ctx context.Context, sessionCtx *common.Ses
 		Props: map[string]string{
 			awsSecretTokenKey: sessToken,
 		},
-	})
+	}, httpClient)
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}

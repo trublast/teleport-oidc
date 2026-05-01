@@ -27,8 +27,8 @@ import (
 	"net"
 
 	"github.com/gravitational/trace"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgproto3/v2"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgproto3"
 	"github.com/sirupsen/logrus"
 
 	"github.com/gravitational/teleport/api/defaults"
@@ -70,7 +70,7 @@ type Engine struct {
 // InitializeConnection initializes the client connection.
 func (e *Engine) InitializeConnection(clientConn net.Conn, sessionCtx *common.Session) error {
 	e.rawClientConn = clientConn
-	e.client = pgproto3.NewBackend(pgproto3.NewChunkReader(clientConn), clientConn)
+	e.client = pgproto3.NewBackend(clientConn, clientConn)
 
 	// The proxy is supposed to pass a startup message it received from
 	// the psql client over to us, so wait for it and extract database
@@ -85,8 +85,9 @@ func (e *Engine) InitializeConnection(clientConn net.Conn, sessionCtx *common.Se
 
 // SendError sends an error to connected client in a Postgres understandable format.
 func (e *Engine) SendError(err error) {
-	if err := e.client.Send(toErrorResponse(err)); err != nil && !utils.IsOKNetworkError(err) {
-		e.Log.WithError(err).Error("Failed to send error to client.")
+	e.client.Send(toErrorResponse(err))
+	if flushErr := e.client.Flush(); flushErr != nil && !utils.IsOKNetworkError(flushErr) {
+		e.Log.WithError(flushErr).Error("Failed to send error to client.")
 	}
 }
 
@@ -277,6 +278,10 @@ func (e *Engine) connect(ctx context.Context, sessionCtx *common.Session) (*pgpr
 	if err != nil {
 		return nil, nil, common.ConvertConnectError(err, sessionCtx)
 	}
+	if err := conn.SyncConn(ctx); err != nil {
+		conn.Close(ctx)
+		return nil, nil, trace.Wrap(err)
+	}
 	// Hijacked connection exposes some internal connection data, such as
 	// parameters we'll need to relay back to the client (e.g. database
 	// server version).
@@ -284,7 +289,7 @@ func (e *Engine) connect(ctx context.Context, sessionCtx *common.Session) (*pgpr
 	if err != nil {
 		return nil, nil, trace.Wrap(err)
 	}
-	frontend := pgproto3.NewFrontend(pgproto3.NewChunkReader(hijackedConn.Conn), hijackedConn.Conn)
+	frontend := pgproto3.NewFrontend(hijackedConn.Conn, hijackedConn.Conn)
 	return frontend, hijackedConn, nil
 }
 
@@ -293,30 +298,22 @@ func (e *Engine) connect(ctx context.Context, sessionCtx *common.Session) (*pgpr
 func (e *Engine) makeClientReady(client *pgproto3.Backend, hijackedConn *pgconn.HijackedConn) error {
 	// AuthenticationOk indicates that the authentication was successful.
 	e.Log.Debug("Sending AuthenticationOk.")
-	if err := client.Send(&pgproto3.AuthenticationOk{}); err != nil {
-		return trace.Wrap(err)
-	}
+	client.Send(&pgproto3.AuthenticationOk{})
 	// BackendKeyData provides secret-key data that the frontend must save
 	// if it wants to be able to issue cancel requests later.
 	e.Log.Debugf("Sending BackendKeyData: PID=%v.", hijackedConn.PID)
-	if err := client.Send(&pgproto3.BackendKeyData{ProcessID: hijackedConn.PID, SecretKey: hijackedConn.SecretKey}); err != nil {
-		return trace.Wrap(err)
-	}
+	client.Send(&pgproto3.BackendKeyData{ProcessID: hijackedConn.PID, SecretKey: hijackedConn.SecretKey})
 	// ParameterStatuses contains parameters reported by the server such as
 	// server version, relay them back to the client.
 	e.Log.Debugf("Sending ParameterStatuses: %v.", hijackedConn.ParameterStatuses)
 	for k, v := range hijackedConn.ParameterStatuses {
-		if err := client.Send(&pgproto3.ParameterStatus{Name: k, Value: v}); err != nil {
-			return trace.Wrap(err)
-		}
+		client.Send(&pgproto3.ParameterStatus{Name: k, Value: v})
 	}
 	// ReadyForQuery indicates that the start-up is completed and the
 	// frontend can now issue commands.
 	e.Log.Debug("Sending ReadyForQuery")
-	if err := client.Send(&pgproto3.ReadyForQuery{TxStatus: 'I'}); err != nil {
-		return trace.Wrap(err)
-	}
-	return nil
+	client.Send(&pgproto3.ReadyForQuery{TxStatus: 'I'})
+	return trace.Wrap(client.Flush())
 }
 
 // receiveFromClient receives messages from the provided backend (which
@@ -332,6 +329,10 @@ func (e *Engine) receiveFromClient(client *pgproto3.Backend, server *pgproto3.Fr
 		message, err := client.Receive()
 		if err != nil {
 			log.WithError(err).Errorf("Failed to receive message from client.")
+			server.Send(&pgproto3.Terminate{})
+			if flushErr := server.Flush(); flushErr != nil {
+				log.WithError(flushErr).Debug("Failed to send Terminate to server.")
+			}
 			clientErrCh <- err
 			return
 		}
@@ -352,11 +353,15 @@ func (e *Engine) receiveFromClient(client *pgproto3.Backend, server *pgproto3.Fr
 		case *pgproto3.FunctionCall:
 			e.auditFuncCallMessage(sessionCtx, msg)
 		case *pgproto3.Terminate:
+			server.Send(message)
+			if flushErr := server.Flush(); flushErr != nil {
+				log.WithError(flushErr).Debug("Failed to send Terminate to server.")
+			}
 			clientErrCh <- nil
 			return
 		}
-		err = server.Send(message)
-		if err != nil {
+		server.Send(message)
+		if err = server.Flush(); err != nil {
 			log.WithError(err).Error("Failed to send message to server.")
 			clientErrCh <- err
 			return
@@ -432,7 +437,7 @@ func (e *Engine) receiveFromServer(serverConn *pgconn.PgConn, serverErrCh chan<-
 
 		// server will never be used to write to server,
 		// which is why we pass io.Discard instead of e.rawServerConn
-		server := pgproto3.NewFrontend(pgproto3.NewChunkReader(copyReader), io.Discard)
+		server := pgproto3.NewFrontend(copyReader, io.Discard)
 
 		var count int64
 		defer func() {
@@ -567,9 +572,6 @@ func (e *Engine) handleCancelRequest(ctx context.Context, sessionCtx *common.Ses
 	// Instead, use the pgconn config string parser for convenience and dial
 	// db host:port ourselves.
 	network, address := pgconn.NetworkAddress(config.Host, config.Port)
-	if err != nil {
-		return trace.Wrap(err)
-	}
 	dialer := net.Dialer{Timeout: defaults.DefaultIOTimeout}
 	conn, err := dialer.DialContext(ctx, network, address)
 	if err != nil {
@@ -579,12 +581,13 @@ func (e *Engine) handleCancelRequest(ctx context.Context, sessionCtx *common.Ses
 	if err != nil {
 		return common.ConvertConnectError(err, sessionCtx)
 	}
-	frontend := pgproto3.NewFrontend(pgproto3.NewChunkReader(tlsConn), tlsConn)
-	if err = frontend.Send(e.cancelReq); err != nil {
+	frontend := pgproto3.NewFrontend(tlsConn, tlsConn)
+	frontend.Send(e.cancelReq)
+	if err := frontend.Flush(); err != nil {
 		return trace.Wrap(err)
 	}
 	response := make([]byte, 1)
-	if _, err := tlsConn.Read(response); err != io.EOF {
+	if _, err := tlsConn.Read(response); err != nil && !errors.Is(err, io.EOF) {
 		// server should close the connection after receiving cancel request.
 		return trace.Wrap(err)
 	}
@@ -594,8 +597,9 @@ func (e *Engine) handleCancelRequest(ctx context.Context, sessionCtx *common.Ses
 // startPGWireTLS is a helper func that upgrades upstream connection to TLS.
 // copied from github.com/jackc/pgconn.startTLS.
 func startPGWireTLS(conn net.Conn, tlsConfig *tls.Config) (net.Conn, error) {
-	frontend := pgproto3.NewFrontend(pgproto3.NewChunkReader(conn), conn)
-	if err := frontend.Send(&pgproto3.SSLRequest{}); err != nil {
+	frontend := pgproto3.NewFrontend(conn, conn)
+	frontend.Send(&pgproto3.SSLRequest{})
+	if err := frontend.Flush(); err != nil {
 		return nil, trace.Wrap(err)
 	}
 	response := make([]byte, 1)

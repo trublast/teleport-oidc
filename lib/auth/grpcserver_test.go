@@ -73,12 +73,13 @@ import (
 	"github.com/gravitational/teleport/lib/modules"
 	"github.com/gravitational/teleport/lib/services"
 	"github.com/gravitational/teleport/lib/tlsca"
+	"github.com/gravitational/teleport/lib/utils/clocki"
 )
 
 func TestMFADeviceManagement(t *testing.T) {
 	ctx := context.Background()
 	srv := newTestTLSServer(t)
-	clock := srv.Clock().(clockwork.FakeClock)
+	clock := srv.Clock().(*clockwork.FakeClock)
 
 	// Enable MFA support.
 	authPref, err := types.NewAuthPreference(types.AuthPreferenceSpecV2{
@@ -502,9 +503,7 @@ type mfaDevices struct {
 func (d *mfaDevices) totpAuthHandler(t *testing.T, challenge *proto.MFAAuthenticateChallenge) *proto.MFAAuthenticateResponse {
 	require.NotNil(t, challenge.TOTP)
 
-	if c, ok := d.clock.(clockwork.FakeClock); ok {
-		c.Advance(30 * time.Second)
-	}
+	clocki.Advance(d.clock, 30*time.Second)
 	code, err := totp.GenerateCode(d.TOTPSecret, d.clock.Now())
 	require.NoError(t, err)
 	return &proto.MFAAuthenticateResponse{

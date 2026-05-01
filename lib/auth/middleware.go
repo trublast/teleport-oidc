@@ -30,10 +30,9 @@ import (
 	"github.com/coreos/go-semver/semver"
 	"github.com/gravitational/oxy/ratelimit"
 	"github.com/gravitational/trace"
-	om "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -329,7 +328,7 @@ type Middleware struct {
 	// Limiter is a rate and connection limiter
 	Limiter *limiter.Limiter
 	// GRPCMetrics is the configured gRPC metrics for the interceptors
-	GRPCMetrics *om.ServerMetrics
+	GRPCMetrics *grpcprom.ServerMetrics
 	// EnableCredentialsForwarding allows the middleware to receive impersonation
 	// identity from the client if it presents a valid proxy certificate.
 	// This is used by the proxy to forward the identity of the user who
@@ -486,14 +485,9 @@ func (a *Middleware) withAuthenticatedUserStreamInterceptor(srv interface{}, ser
 
 // UnaryInterceptors returns the gRPC unary interceptor chain.
 func (a *Middleware) UnaryInterceptors() []grpc.UnaryServerInterceptor {
-	is := []grpc.UnaryServerInterceptor{
-		//nolint:staticcheck // SA1019. There is a data race in the stats.Handler that is replacing
-		// the interceptor. See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/4576.
-		otelgrpc.UnaryServerInterceptor(),
-	}
-
+	var is []grpc.UnaryServerInterceptor
 	if a.GRPCMetrics != nil {
-		is = append(is, om.UnaryServerInterceptor(a.GRPCMetrics))
+		is = append(is, a.GRPCMetrics.UnaryServerInterceptor())
 	}
 
 	return append(is,
@@ -506,14 +500,9 @@ func (a *Middleware) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 
 // StreamInterceptors returns the gRPC stream interceptor chain.
 func (a *Middleware) StreamInterceptors() []grpc.StreamServerInterceptor {
-	is := []grpc.StreamServerInterceptor{
-		//nolint:staticcheck // SA1019. There is a data race in the stats.Handler that is replacing
-		// the interceptor. See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/4576.
-		otelgrpc.StreamServerInterceptor(),
-	}
-
+	var is []grpc.StreamServerInterceptor
 	if a.GRPCMetrics != nil {
-		is = append(is, om.StreamServerInterceptor(a.GRPCMetrics))
+		is = append(is, a.GRPCMetrics.StreamServerInterceptor())
 	}
 
 	return append(is,

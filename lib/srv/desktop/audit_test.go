@@ -32,6 +32,7 @@ import (
 	libevents "github.com/gravitational/teleport/lib/events"
 	"github.com/gravitational/teleport/lib/srv/desktop/tdp"
 	"github.com/gravitational/teleport/lib/tlsca"
+	"github.com/gravitational/teleport/lib/utils/clocki"
 )
 
 const (
@@ -172,7 +173,7 @@ func TestSessionEndEvent(t *testing.T) {
 
 	id, audit := setup(testDesktop)
 
-	audit.clock.(clockwork.FakeClock).Advance(30 * time.Second)
+	clocki.Advance(audit.clock, 30*time.Second)
 
 	endEvent := audit.makeSessionEnd(true)
 

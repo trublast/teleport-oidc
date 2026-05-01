@@ -183,7 +183,7 @@ type ServicesTestSuite struct {
 	UsersS        services.UsersService
 	RestrictionsS services.Restrictions
 	ChangesC      chan interface{}
-	Clock         clockwork.FakeClock
+	Clock         *clockwork.FakeClock
 }
 
 func (s *ServicesTestSuite) Users() services.UsersService {

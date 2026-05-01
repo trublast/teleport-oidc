@@ -159,7 +159,7 @@ type mockServer struct {
 	datadir   string
 	auth      *auth.Server
 	component string
-	clock     clockwork.FakeClock
+	clock     *clockwork.FakeClock
 	bpf       bpf.BPF
 }
 

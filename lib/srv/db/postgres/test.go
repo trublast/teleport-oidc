@@ -30,10 +30,10 @@ import (
 	"sync/atomic"
 
 	"github.com/gravitational/trace"
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgproto3/v2"
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgproto3"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/sirupsen/logrus"
 
 	"github.com/gravitational/teleport/lib/defaults"
@@ -105,7 +105,7 @@ type TestServer struct {
 // cancellable.
 type pidHandle struct {
 	// secretKey is checked for equality when cancel request is received.
-	secretKey uint32
+	secretKey []byte
 	// cancel cancels the operation in progress, if any.
 	cancel context.CancelFunc
 }
@@ -210,7 +210,7 @@ func (s *TestServer) handleConnection(conn net.Conn) error {
 }
 
 func (s *TestServer) startTLS(conn net.Conn) (*pgproto3.Backend, error) {
-	client := pgproto3.NewBackend(pgproto3.NewChunkReader(conn), conn)
+	client := pgproto3.NewBackend(conn, conn)
 	startupMessage, err := client.ReceiveStartupMessage()
 	if err != nil {
 		return nil, trace.Wrap(err)
@@ -225,7 +225,7 @@ func (s *TestServer) startTLS(conn net.Conn) (*pgproto3.Backend, error) {
 	}
 	// Upgrade connection to TLS.
 	conn = tls.Server(conn, s.tlsConfig)
-	return pgproto3.NewBackend(pgproto3.NewChunkReader(conn), conn), nil
+	return pgproto3.NewBackend(conn, conn), nil
 }
 
 func (s *TestServer) handleStartup(client *pgproto3.Backend, startupMessage *pgproto3.StartupMessage) error {
@@ -239,8 +239,9 @@ func (s *TestServer) handleStartup(client *pgproto3.Backend, startupMessage *pgp
 		// simulates cloud provider IAM auth.
 		if err := s.handlePasswordAuth(client); err != nil {
 			if trace.IsAccessDenied(err) {
-				if err := client.Send(&pgproto3.ErrorResponse{Code: pgerrcode.InvalidPassword, Message: err.Error()}); err != nil {
-					return trace.Wrap(err)
+				client.Send(&pgproto3.ErrorResponse{Code: pgerrcode.InvalidPassword, Message: err.Error()})
+				if flushErr := client.Flush(); flushErr != nil {
+					return trace.Wrap(flushErr)
 				}
 			}
 			return trace.Wrap(err)
@@ -251,23 +252,17 @@ func (s *TestServer) handleStartup(client *pgproto3.Backend, startupMessage *pgp
 		}
 	}
 
-	// Accept auth and send ready for query.
-	if err := client.Send(&pgproto3.AuthenticationOk{}); err != nil {
-		return trace.Wrap(err)
-	}
-
 	pid := s.newPid()
 	defer s.cleanupPid(pid)
 
-	err := client.Send(&pgproto3.BackendKeyData{
-		ProcessID: pid,
-		SecretKey: testSecretKey,
-	})
-	if err != nil {
-		return trace.Wrap(err)
-	}
-
-	if err := client.Send(&pgproto3.ReadyForQuery{}); err != nil {
+	if err := s.sendMessages(client,
+		&pgproto3.AuthenticationOk{},
+		&pgproto3.BackendKeyData{
+			ProcessID: pid,
+			SecretKey: testSecretKey,
+		},
+		&pgproto3.ReadyForQuery{},
+	); err != nil {
 		return trace.Wrap(err)
 	}
 	// Enter the loop replying to client messages.
@@ -317,14 +312,15 @@ func (s *TestServer) handleCancelRequest(client *pgproto3.Backend, req *pgproto3
 	s.pidMu.Lock()
 	defer s.pidMu.Unlock()
 	p, ok := s.pids[req.ProcessID]
-	if ok && p != nil && p.secretKey == req.SecretKey && p.cancel != nil {
+	if ok && p != nil && bytes.Equal(p.secretKey, req.SecretKey) && p.cancel != nil {
 		p.cancel()
 	}
 }
 
 func (s *TestServer) handlePasswordAuth(client *pgproto3.Backend) error {
 	// Request cleartext password.
-	if err := client.Send(&pgproto3.AuthenticationCleartextPassword{}); err != nil {
+	client.Send(&pgproto3.AuthenticationCleartextPassword{})
+	if err := client.Flush(); err != nil {
 		return trace.Wrap(err)
 	}
 	// Wait for response which should be PasswordMessage.
@@ -358,20 +354,12 @@ func (s *TestServer) handleQuery(client *pgproto3.Backend, query string, pid uin
 		return trace.Wrap(s.handleBenchmarkQuery(query, client))
 	}
 
-	messages := []pgproto3.BackendMessage{
-		&pgproto3.RowDescription{Fields: TestQueryResponse.FieldDescriptions},
+	return trace.Wrap(s.sendMessages(client,
+		&pgproto3.RowDescription{Fields: []pgproto3.FieldDescription{{Name: []byte(testQueryFieldName)}}},
 		&pgproto3.DataRow{Values: TestQueryResponse.Rows[0]},
-		&pgproto3.CommandComplete{CommandTag: TestQueryResponse.CommandTag},
+		&pgproto3.CommandComplete{CommandTag: []byte(TestQueryResponse.CommandTag.String())},
 		&pgproto3.ReadyForQuery{},
-	}
-	for _, message := range messages {
-		s.log.Debugf("Sending %#v.", message)
-		err := client.Send(message)
-		if err != nil {
-			return trace.Wrap(err)
-		}
-	}
-	return nil
+	))
 }
 
 func (s *TestServer) handleCreateStoredProcedure(query string) error {
@@ -467,32 +455,12 @@ func (s *TestServer) handleBenchmarkQuery(query string, client *pgproto3.Backend
 
 	s.log.Debugf("Responding to query %q, will send %v messages, total length %v", query, repeats, len(mm.payload))
 
-	// preamble
-	err = client.Send(&pgproto3.RowDescription{Fields: []pgproto3.FieldDescription{{Name: []byte("dummy")}}})
-	if err != nil {
-		return trace.Wrap(err)
-	}
-
-	// send messages in bulk, which is fast.
-	err = client.Send(mm)
-	if err != nil {
-		return trace.Wrap(err)
-	}
-
-	// epilogue
-	err = client.Send(&pgproto3.CommandComplete{CommandTag: []byte("SELECT 100")})
-	if err != nil {
-		return trace.Wrap(err)
-	}
-
-	err = client.Send(&pgproto3.ReadyForQuery{})
-	if err != nil {
-		return trace.Wrap(err)
-	}
-
+	client.Send(&pgproto3.RowDescription{Fields: []pgproto3.FieldDescription{{Name: []byte("dummy")}}})
+	client.Send(mm)
+	client.Send(&pgproto3.CommandComplete{CommandTag: []byte("SELECT 100")})
+	client.Send(&pgproto3.ReadyForQuery{})
 	s.log.Debugf("Finished handling query %q", query)
-
-	return nil
+	return trace.Wrap(client.Flush())
 }
 
 func (s *TestServer) handleActivateUser(client *pgproto3.Backend) error {
@@ -681,7 +649,7 @@ func (s *TestServer) receiveFrontendMessage(client *pgproto3.Backend) (pgproto3.
 
 func getVarchar(formatCode int16, src []byte) (string, error) {
 	var dst any
-	err := pgtype.NewConnInfo().Scan(pgtype.VarcharOID, formatCode, src, &dst)
+	err := pgtype.NewMap().Scan(pgtype.VarcharOID, formatCode, src, &dst)
 	if err != nil {
 		return "", trace.Wrap(err)
 	}
@@ -694,17 +662,21 @@ func getVarchar(formatCode int16, src []byte) (string, error) {
 
 func getVarcharArray(formatCode int16, src []byte) ([]string, error) {
 	var dst any
-	err := pgtype.NewConnInfo().Scan(pgtype.VarcharArrayOID, formatCode, src, &dst)
+	err := pgtype.NewMap().Scan(pgtype.VarcharArrayOID, formatCode, src, &dst)
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
-	arr, ok := dst.(pgtype.VarcharArray)
+	arr, ok := dst.([]any)
 	if !ok {
-		return nil, trace.BadParameter("expected string array, got %#v", dst)
+		return nil, trace.BadParameter("expected []any, got %#v", dst)
 	}
 	var strs []string
-	for _, el := range arr.Elements {
-		strs = append(strs, el.String)
+	for _, el := range arr {
+		s, ok := el.(string)
+		if !ok {
+			return nil, trace.BadParameter("expected string element, got %T", el)
+		}
+		strs = append(strs, s)
 	}
 	return strs, nil
 }
@@ -712,12 +684,9 @@ func getVarcharArray(formatCode int16, src []byte) ([]string, error) {
 func (s *TestServer) sendMessages(client *pgproto3.Backend, messages ...pgproto3.BackendMessage) error {
 	for _, message := range messages {
 		s.log.Debugf("Sending %#v.", message)
-		err := client.Send(message)
-		if err != nil {
-			return trace.Wrap(err)
-		}
+		client.Send(message)
 	}
-	return nil
+	return trace.Wrap(client.Flush())
 }
 
 func (s *TestServer) fakeLongRunningQuery(client *pgproto3.Backend, pid uint32) error {
@@ -727,31 +696,19 @@ func (s *TestServer) fakeLongRunningQuery(client *pgproto3.Backend, pid uint32) 
 		return trace.Wrap(err)
 	}
 	<-ctx.Done()
-	messages := []pgproto3.BackendMessage{
+	return trace.Wrap(s.sendMessages(client,
 		&pgproto3.ErrorResponse{
 			Code:    pgerrcode.QueryCanceled,
 			Message: "canceling statement due to user request",
 		},
 		&pgproto3.ReadyForQuery{},
-	}
-	for _, message := range messages {
-		s.log.Debugf("Sending %#v.", message)
-		err := client.Send(message)
-		if err != nil {
-			return trace.Wrap(err)
-		}
-	}
-	return nil
+	))
 }
 
 func (s *TestServer) handleSync(client *pgproto3.Backend) error {
 	message := &pgproto3.ReadyForQuery{}
 	s.log.Debugf("Sending %#v.", message)
-	err := client.Send(message)
-	if err != nil {
-		return trace.Wrap(err)
-	}
-	return nil
+	return trace.Wrap(s.sendMessages(client, message))
 }
 
 // Port returns the port server is listening on.
@@ -825,11 +782,13 @@ func (s *TestServer) registerCancel(pid uint32, cancel context.CancelFunc) error
 	return nil
 }
 
+const testQueryFieldName = "test-field"
+
 // TestQueryResponse is the response test Postgres server sends to every query.
 var TestQueryResponse = &pgconn.Result{
-	FieldDescriptions: []pgproto3.FieldDescription{{Name: []byte("test-field")}},
+	FieldDescriptions: []pgconn.FieldDescription{{Name: testQueryFieldName}},
 	Rows:              [][][]byte{{[]byte("test-value")}},
-	CommandTag:        pgconn.CommandTag("select 1"),
+	CommandTag:        pgconn.NewCommandTag("select 1"),
 }
 
 // TestLongRunningQuery is a stub SQL query clients can use to simulate a long
@@ -837,7 +796,7 @@ var TestQueryResponse = &pgconn.Result{
 const TestLongRunningQuery = "pg_sleep(forever)"
 
 // testSecretKey is the secret key stub for all connections, used for cancel requests.
-const testSecretKey = 1234
+var testSecretKey = []byte{0, 0, 0x04, 0xD2}
 
 // userParameterName is the parameter name that contains the username used to
 // connect.

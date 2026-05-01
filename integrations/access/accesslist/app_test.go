@@ -249,7 +249,7 @@ func TestAccessListReminders_BadClient(t *testing.T) {
 func advanceAndLookForRecipients(t *testing.T,
 	bot *mockMessagingBot,
 	alSvc services.AccessLists,
-	clock clockwork.FakeClock,
+	clock *clockwork.FakeClock,
 	advance time.Duration,
 	accessList *accesslist.AccessList,
 	recipients ...string) {

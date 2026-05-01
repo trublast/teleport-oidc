@@ -119,7 +119,7 @@ func (r BlockingFakeClock) BlockUntil(int) {
 // Constructor describes a function for constructing new instances of a
 // backend, with various options as required by a given test. Note that
 // it's the caller's responsibility to close it when the test is finished.
-type Constructor func(options ...ConstructionOption) (backend.Backend, clockwork.FakeClock, error)
+type Constructor func(options ...ConstructionOption) (backend.Backend, *clockwork.FakeClock, error)
 
 // RunBackendComplianceSuite runs the entire backend compliance suite,
 // creating a collection of named subtests under the context provided

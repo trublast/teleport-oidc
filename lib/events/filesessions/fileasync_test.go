@@ -493,7 +493,7 @@ func TestUploadBadSession(t *testing.T) {
 type uploaderPack struct {
 	scanPeriod       time.Duration
 	initialScanDelay time.Duration
-	clock            clockwork.FakeClock
+	clock            *clockwork.FakeClock
 	eventsC          chan events.UploadEvent
 	memEventsC       chan events.UploadEvent
 	memUploader      *eventstest.MemoryUploader
