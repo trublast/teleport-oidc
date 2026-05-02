@@ -662,11 +662,11 @@ func getRoleARNForAssumedRole(iamClient iamiface.IAMAPI, identity awslib.Identit
 
 	roleOutput, err := iamClient.GetRole(&iam.GetRoleInput{RoleName: aws.String(identity.GetName())})
 	if err != nil || roleOutput == nil || roleOutput.Role == nil || roleOutput.Role.Arn == nil {
-		return nil, trace.BadParameter(failedToResolveAssumeRoleARN)
+		return nil, trace.BadParameter("%s", failedToResolveAssumeRoleARN)
 	}
 	roleIdentity, err := awslib.IdentityFromArn(*roleOutput.Role.Arn)
 	if err != nil {
-		return nil, trace.BadParameter(failedToResolveAssumeRoleARN)
+		return nil, trace.BadParameter("%s", failedToResolveAssumeRoleARN)
 	}
 	return roleIdentity, nil
 }

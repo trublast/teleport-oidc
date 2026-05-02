@@ -971,7 +971,7 @@ func (l *Backend) inTransaction(ctx context.Context, f func(tx *sql.Tx) error) (
 		}
 		if err != nil && !trace.IsNotFound(err) {
 			if isConstraintError(trace.Unwrap(err)) {
-				err = trace.AlreadyExists(err.Error())
+				err = trace.AlreadyExists("%s", err.Error())
 			}
 			// transaction aborted by interrupt, no action needed
 			if isInterrupt(trace.Unwrap(err)) {

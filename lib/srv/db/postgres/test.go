@@ -498,11 +498,6 @@ func (s *TestServer) handleActivateUser(client *pgproto3.Backend) error {
 	if err != nil {
 		return trace.Wrap(err)
 	}
-	// Expect Describe message.
-	_, err = s.receiveDescribeMessage(client)
-	if err != nil {
-		return trace.Wrap(err)
-	}
 	// Expect Execute message.
 	_, err = s.receiveExecuteMessage(client)
 	if err != nil {
@@ -556,11 +551,6 @@ func (s *TestServer) handleDeactivateUser(client *pgproto3.Backend) error {
 	}
 	// Extract user name.
 	name, err := getVarchar(bind.ParameterFormatCodes[0], bind.Parameters[0])
-	if err != nil {
-		return trace.Wrap(err)
-	}
-	// Expect Describe message.
-	_, err = s.receiveDescribeMessage(client)
 	if err != nil {
 		return trace.Wrap(err)
 	}

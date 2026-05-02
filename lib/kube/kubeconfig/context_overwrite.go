@@ -79,7 +79,7 @@ func parseContextOverrideError(err error) error {
 		"Please check the template syntax and try again.\n" +
 		supportedFunctionsMsg
 	if err == nil {
-		return trace.BadParameter(msg)
+		return trace.BadParameter("%s", msg)
 	}
 	return trace.BadParameter(
 		msg+

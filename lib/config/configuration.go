@@ -1358,13 +1358,13 @@ func applySSHConfig(fc *FileConfig, cfg *servicecfg.Config) (err error) {
 					"Teleport binary was built without PAM support. To continue either download a \n" +
 					"Teleport binary build with PAM support from https://goteleport.com/teleport \n" +
 					"or disable PAM in file configuration."
-				return trace.BadParameter(errorMessage)
+				return trace.BadParameter("%s", errorMessage)
 			}
 			if !pam.SystemHasPAM() {
 				errorMessage := "Unable to start Teleport: PAM was enabled in file configuration but this \n" +
 					"system does not have the needed PAM library installed. To continue either \n" +
 					"install libpam or disable PAM in file configuration."
-				return trace.BadParameter(errorMessage)
+				return trace.BadParameter("%s", errorMessage)
 			}
 		}
 	}

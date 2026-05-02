@@ -4297,7 +4297,7 @@ func checkInventorySupportsRole(ctx context.Context, role types.Role, authVersio
 			continue
 		}
 		if version.LessThan(minRequiredVersion) {
-			return trace.BadParameter(msg)
+			return trace.BadParameter("%s", msg)
 		}
 	}
 	return nil

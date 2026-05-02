@@ -296,7 +296,7 @@ func UnmarshalSAMLConnector(bytes []byte, opts ...MarshalOption) (types.SAMLConn
 	case types.V2:
 		var c types.SAMLConnectorV2
 		if err := utils.FastUnmarshal(bytes, &c); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 
 		if err := ValidateSAMLConnector(&c, nil); err != nil {

@@ -347,10 +347,8 @@ func TestTerminalSizeRequest(t *testing.T) {
 		// initiating the client request for the window size to prevent flakiness.
 		require.EventuallyWithT(t, func(t *assert.CollectT) {
 			size, err := f.ssh.srv.termHandlers.SessionRegistry.GetTerminalSize(sessionID)
-			if assert.NoError(t, err) {
-				return
-			}
-			assert.Empty(t, cmp.Diff(expectedSize, size, cmp.AllowUnexported(term.Winsize{})))
+			require.NoError(t, err)
+			require.Empty(t, cmp.Diff(expectedSize, *size, cmp.AllowUnexported(term.Winsize{})))
 		}, 10*time.Second, 100*time.Millisecond)
 
 		// Send a request for the window size now that we know the window change
@@ -865,46 +863,22 @@ func TestAgentForward(t *testing.T) {
 	err = agent.RequestAgentForwarding(se.Session)
 	require.NoError(t, err)
 
-	// prepare to send virtual "keyboard input" into the shell:
-	keyboard, err := se.StdinPipe()
+	// Use a non-interactive command so user shell startup files can't overwrite
+	// the forwarded SSH_AUTH_SOCK with the developer's local agent.
+	output, err := se.Output(ctx, fmt.Sprintf("printenv %v", teleport.SSHAuthSock))
 	require.NoError(t, err)
-	t.Cleanup(func() { keyboard.Close() })
-
-	// start interactive SSH session (new shell):
-	err = se.Shell(ctx)
-	require.NoError(t, err)
-
-	// create a temp file to collect the shell output into:
-	tmpFile, err := os.CreateTemp(t.TempDir(), "teleport-agent-forward-test")
-	require.NoError(t, err)
-	tmpFile.Close()
-
-	// type 'printenv SSH_AUTH_SOCK > /path/to/tmp/file' into the session (dumping the value of SSH_AUTH_STOCK into the temp file)
-	_, err = fmt.Fprintf(keyboard, "printenv %v >> %s\n\r", teleport.SSHAuthSock, tmpFile.Name())
-	require.NoError(t, err)
-
-	// wait for the output
-	var socketPath string
-	require.Eventually(t, func() bool {
-		output, err := os.ReadFile(tmpFile.Name())
-		if err == nil && len(output) != 0 {
-			socketPath = strings.TrimSpace(string(output))
-			return true
-		}
-		return false
-	}, 10*time.Second, 100*time.Millisecond, "failed to read socket path")
+	socketPath := strings.TrimSpace(string(output))
+	require.NotEmpty(t, socketPath)
 
 	// try dialing the ssh agent socket:
 	file, err := net.Dial("unix", socketPath)
 	require.NoError(t, err)
 
 	clientAgent := agent.NewClient(file)
-	signers, err := clientAgent.Signers()
-	require.NoError(t, err)
 
 	sshConfig := &ssh.ClientConfig{
 		User:            f.user,
-		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signers...)},
+		Auth:            []ssh.AuthMethod{ssh.PublicKeysCallback(clientAgent.Signers)},
 		HostKeyCallback: ssh.FixedHostKey(f.signer.PublicKey()),
 	}
 
@@ -916,9 +890,6 @@ func TestAgentForward(t *testing.T) {
 	// make sure the socket persists after the session is closed.
 	// (agents are started from specific sessions, but apply to all
 	// sessions on the connection).
-	err = se.Close()
-	require.NoError(t, err)
-
 	// Pause to allow closure to propagate.
 	time.Sleep(150 * time.Millisecond)
 	_, err = net.Dial("unix", socketPath)

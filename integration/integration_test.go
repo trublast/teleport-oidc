@@ -117,6 +117,12 @@ func newSuite(t *testing.T) *integrationTestSuite {
 
 type integrationTest func(t *testing.T, suite *integrationTestSuite)
 
+func runIntegrationTest(t *testing.T, test integrationTest) {
+	t.Helper()
+	suite := newSuite(t)
+	suite.bind(test)(t)
+}
+
 func (s *integrationTestSuite) bind(test integrationTest) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Attempt to set a logger for the test. Be warned that parts of the
@@ -129,76 +135,252 @@ func (s *integrationTestSuite) bind(test integrationTest) func(t *testing.T) {
 	}
 }
 
-// TestIntegrations acts as the master test suite for all integration tests
-// requiring standardized setup and teardown.
-func TestIntegrations(t *testing.T) {
-	// TODO: break all of these subtests out into individual tests so that we get
-	//       better progress reporting, rather than have to wait for the entire
-	//       suite to complete
-	suite := newSuite(t)
+func TestIntegrationAuditOff(t *testing.T) {
+	runIntegrationTest(t, testAuditOff)
+}
 
-	t.Run("AuditOff", suite.bind(testAuditOff))
-	t.Run("AuditOn", suite.bind(testAuditOn))
-	t.Run("BPFExec", suite.bind(testBPFExec))
-	t.Run("BPFInteractive", suite.bind(testBPFInteractive))
-	t.Run("BPFSessionDifferentiation", suite.bind(testBPFSessionDifferentiation))
-	t.Run("ClientIdleConnection", suite.bind(testClientIdleConnection))
-	t.Run("CmdLabels", suite.bind(testCmdLabels))
-	t.Run("ControlMaster", suite.bind(testControlMaster))
-	t.Run("X11Forwarding", suite.bind(testX11Forwarding))
-	t.Run("CustomReverseTunnel", suite.bind(testCustomReverseTunnel))
-	t.Run("DataTransfer", suite.bind(testDataTransfer))
-	t.Run("Disconnection", suite.bind(testDisconnectScenarios))
-	t.Run("Discovery", suite.bind(testDiscovery))
-	t.Run("DiscoveryNode", suite.bind(testDiscoveryNode))
-	t.Run("DiscoveryRecovers", suite.bind(testDiscoveryRecovers))
-	t.Run("EnvironmentVars", suite.bind(testEnvironmentVariables))
-	t.Run("ExecEvents", suite.bind(testExecEvents))
-	t.Run("ExternalClient", suite.bind(testExternalClient))
-	t.Run("HA", suite.bind(testHA))
-	t.Run("Interactive (Regular)", suite.bind(testInteractiveRegular))
-	t.Run("Interactive (Reverse Tunnel)", suite.bind(testInteractiveReverseTunnel))
-	t.Run("Interoperability", suite.bind(testInteroperability))
-	t.Run("InvalidLogin", suite.bind(testInvalidLogins))
-	t.Run("IP Propagation", suite.bind(testIPPropagation))
-	t.Run("JumpTrustedClusters", suite.bind(testJumpTrustedClusters))
-	t.Run("JumpTrustedClustersWithLabels", suite.bind(testJumpTrustedClustersWithLabels))
-	t.Run("LeafSessionRecording", suite.bind(testLeafProxySessionRecording))
-	t.Run("List", suite.bind(testList))
-	t.Run("MapRoles", suite.bind(testMapRoles))
-	t.Run("ModeratedSessions", suite.bind(testModeratedSessions))
-	t.Run("MultiplexingTrustedClusters", suite.bind(testMultiplexingTrustedClusters))
-	t.Run("PAM", suite.bind(testPAM))
-	t.Run("PortForwarding", suite.bind(testPortForwarding))
-	t.Run("ProxyHostKeyCheck", suite.bind(testProxyHostKeyCheck))
-	t.Run("ReverseTunnelCollapse", suite.bind(testReverseTunnelCollapse))
-	t.Run("RotateRollback", suite.bind(testRotateRollback))
-	t.Run("RotateSuccess", suite.bind(testRotateSuccess))
-	t.Run("RotateTrustedClusters", suite.bind(testRotateTrustedClusters))
-	t.Run("SessionStartContainsAccessRequest", suite.bind(testSessionStartContainsAccessRequest))
-	t.Run("SessionStreaming", suite.bind(testSessionStreaming))
-	t.Run("SSHExitCode", suite.bind(testSSHExitCode))
-	t.Run("Shutdown", suite.bind(testShutdown))
-	t.Run("TrustedClusters", suite.bind(testTrustedClusters))
-	t.Run("TrustedDisabledClusters", suite.bind(testDisabledTrustedClusters))
-	t.Run("TrustedClustersRoleMapChanges", suite.bind(testTrustedClustersRoleMapChanges))
-	t.Run("TrustedClustersWithLabels", suite.bind(testTrustedClustersWithLabels))
-	t.Run("TrustedTunnelNode", suite.bind(testTrustedTunnelNode))
-	t.Run("TwoClustersProxy", suite.bind(testTwoClustersProxy))
-	t.Run("TwoClustersTunnel", suite.bind(testTwoClustersTunnel))
-	t.Run("UUIDBasedProxy", suite.bind(testUUIDBasedProxy))
-	t.Run("WindowChange", suite.bind(testWindowChange))
-	t.Run("SSHTracker", suite.bind(testSSHTracker))
-	t.Run("ListResourcesAcrossClusters", suite.bind(testListResourcesAcrossClusters))
-	t.Run("SessionRecordingModes", suite.bind(testSessionRecordingModes))
-	t.Run("DifferentPinnedIP", suite.bind(testDifferentPinnedIP))
-	t.Run("JoinOverReverseTunnelOnly", suite.bind(testJoinOverReverseTunnelOnly))
-	t.Run("SFTP", suite.bind(testSFTP))
-	t.Run("ModeratedSFTP", suite.bind(testModeratedSFTP))
-	t.Run("EscapeSequenceTriggers", suite.bind(testEscapeSequenceTriggers))
-	t.Run("AuthLocalNodeControlStream", suite.bind(testAuthLocalNodeControlStream))
-	t.Run("AgentlessConnection", suite.bind(testAgentlessConnection))
-	t.Run("LeafAgentlessConnection", suite.bind(testTrustedClusterAgentless))
+func TestIntegrationAuditOn(t *testing.T) {
+	runIntegrationTest(t, testAuditOn)
+}
+
+func TestIntegrationBPFExec(t *testing.T) {
+	runIntegrationTest(t, testBPFExec)
+}
+
+func TestIntegrationBPFInteractive(t *testing.T) {
+	runIntegrationTest(t, testBPFInteractive)
+}
+
+func TestIntegrationBPFSessionDifferentiation(t *testing.T) {
+	runIntegrationTest(t, testBPFSessionDifferentiation)
+}
+
+func TestIntegrationClientIdleConnection(t *testing.T) {
+	runIntegrationTest(t, testClientIdleConnection)
+}
+
+func TestIntegrationCmdLabels(t *testing.T) {
+	runIntegrationTest(t, testCmdLabels)
+}
+
+func TestIntegrationControlMaster(t *testing.T) {
+	runIntegrationTest(t, testControlMaster)
+}
+
+func TestIntegrationX11Forwarding(t *testing.T) {
+	runIntegrationTest(t, testX11Forwarding)
+}
+
+func TestIntegrationCustomReverseTunnel(t *testing.T) {
+	runIntegrationTest(t, testCustomReverseTunnel)
+}
+
+func TestIntegrationDataTransfer(t *testing.T) {
+	runIntegrationTest(t, testDataTransfer)
+}
+
+func TestIntegrationDisconnection(t *testing.T) {
+	runIntegrationTest(t, testDisconnectScenarios)
+}
+
+func TestIntegrationDiscovery(t *testing.T) {
+	runIntegrationTest(t, testDiscovery)
+}
+
+func TestIntegrationDiscoveryNode(t *testing.T) {
+	runIntegrationTest(t, testDiscoveryNode)
+}
+
+func TestIntegrationDiscoveryRecovers(t *testing.T) {
+	runIntegrationTest(t, testDiscoveryRecovers)
+}
+
+func TestIntegrationEnvironmentVars(t *testing.T) {
+	runIntegrationTest(t, testEnvironmentVariables)
+}
+
+func TestIntegrationExecEvents(t *testing.T) {
+	runIntegrationTest(t, testExecEvents)
+}
+
+func TestIntegrationExternalClient(t *testing.T) {
+	runIntegrationTest(t, testExternalClient)
+}
+
+func TestIntegrationHA(t *testing.T) {
+	runIntegrationTest(t, testHA)
+}
+
+func TestIntegrationInteractiveRegular(t *testing.T) {
+	runIntegrationTest(t, testInteractiveRegular)
+}
+
+func TestIntegrationInteractiveReverseTunnel(t *testing.T) {
+	runIntegrationTest(t, testInteractiveReverseTunnel)
+}
+
+func TestIntegrationInteroperability(t *testing.T) {
+	runIntegrationTest(t, testInteroperability)
+}
+
+func TestIntegrationInvalidLogin(t *testing.T) {
+	runIntegrationTest(t, testInvalidLogins)
+}
+
+func TestIntegrationIPPropagation(t *testing.T) {
+	runIntegrationTest(t, testIPPropagation)
+}
+
+func TestIntegrationJumpTrustedClusters(t *testing.T) {
+	runIntegrationTest(t, testJumpTrustedClusters)
+}
+
+func TestIntegrationJumpTrustedClustersWithLabels(t *testing.T) {
+	runIntegrationTest(t, testJumpTrustedClustersWithLabels)
+}
+
+func TestIntegrationLeafSessionRecording(t *testing.T) {
+	runIntegrationTest(t, testLeafProxySessionRecording)
+}
+
+func TestIntegrationList(t *testing.T) {
+	runIntegrationTest(t, testList)
+}
+
+func TestIntegrationMapRoles(t *testing.T) {
+	runIntegrationTest(t, testMapRoles)
+}
+
+func TestIntegrationModeratedSessions(t *testing.T) {
+	runIntegrationTest(t, testModeratedSessions)
+}
+
+func TestIntegrationMultiplexingTrustedClusters(t *testing.T) {
+	runIntegrationTest(t, testMultiplexingTrustedClusters)
+}
+
+func TestIntegrationPAM(t *testing.T) {
+	runIntegrationTest(t, testPAM)
+}
+
+func TestIntegrationPortForwarding(t *testing.T) {
+	runIntegrationTest(t, testPortForwarding)
+}
+
+func TestIntegrationProxyHostKeyCheck(t *testing.T) {
+	runIntegrationTest(t, testProxyHostKeyCheck)
+}
+
+func TestIntegrationReverseTunnelCollapse(t *testing.T) {
+	runIntegrationTest(t, testReverseTunnelCollapse)
+}
+
+func TestIntegrationRotateRollback(t *testing.T) {
+	runIntegrationTest(t, testRotateRollback)
+}
+
+func TestIntegrationRotateSuccess(t *testing.T) {
+	runIntegrationTest(t, testRotateSuccess)
+}
+
+func TestIntegrationRotateTrustedClusters(t *testing.T) {
+	runIntegrationTest(t, testRotateTrustedClusters)
+}
+
+func TestIntegrationSessionStartContainsAccessRequest(t *testing.T) {
+	runIntegrationTest(t, testSessionStartContainsAccessRequest)
+}
+
+func TestIntegrationSessionStreaming(t *testing.T) {
+	runIntegrationTest(t, testSessionStreaming)
+}
+
+func TestIntegrationSSHExitCode(t *testing.T) {
+	runIntegrationTest(t, testSSHExitCode)
+}
+
+func TestIntegrationShutdown(t *testing.T) {
+	runIntegrationTest(t, testShutdown)
+}
+
+func TestIntegrationTrustedClusters(t *testing.T) {
+	runIntegrationTest(t, testTrustedClusters)
+}
+
+func TestIntegrationTrustedDisabledClusters(t *testing.T) {
+	runIntegrationTest(t, testDisabledTrustedClusters)
+}
+
+func TestIntegrationTrustedClustersRoleMapChanges(t *testing.T) {
+	runIntegrationTest(t, testTrustedClustersRoleMapChanges)
+}
+
+func TestIntegrationTrustedClustersWithLabels(t *testing.T) {
+	runIntegrationTest(t, testTrustedClustersWithLabels)
+}
+
+func TestIntegrationTrustedTunnelNode(t *testing.T) {
+	runIntegrationTest(t, testTrustedTunnelNode)
+}
+
+func TestIntegrationTwoClustersProxy(t *testing.T) {
+	runIntegrationTest(t, testTwoClustersProxy)
+}
+
+func TestIntegrationTwoClustersTunnel(t *testing.T) {
+	runIntegrationTest(t, testTwoClustersTunnel)
+}
+
+func TestIntegrationUUIDBasedProxy(t *testing.T) {
+	runIntegrationTest(t, testUUIDBasedProxy)
+}
+
+func TestIntegrationWindowChange(t *testing.T) {
+	runIntegrationTest(t, testWindowChange)
+}
+
+func TestIntegrationSSHTracker(t *testing.T) {
+	runIntegrationTest(t, testSSHTracker)
+}
+
+func TestIntegrationListResourcesAcrossClusters(t *testing.T) {
+	runIntegrationTest(t, testListResourcesAcrossClusters)
+}
+
+func TestIntegrationSessionRecordingModes(t *testing.T) {
+	runIntegrationTest(t, testSessionRecordingModes)
+}
+
+func TestIntegrationDifferentPinnedIP(t *testing.T) {
+	runIntegrationTest(t, testDifferentPinnedIP)
+}
+
+func TestIntegrationJoinOverReverseTunnelOnly(t *testing.T) {
+	runIntegrationTest(t, testJoinOverReverseTunnelOnly)
+}
+
+func TestIntegrationSFTP(t *testing.T) {
+	runIntegrationTest(t, testSFTP)
+}
+
+func TestIntegrationModeratedSFTP(t *testing.T) {
+	runIntegrationTest(t, testModeratedSFTP)
+}
+
+func TestIntegrationEscapeSequenceTriggers(t *testing.T) {
+	runIntegrationTest(t, testEscapeSequenceTriggers)
+}
+
+func TestIntegrationAuthLocalNodeControlStream(t *testing.T) {
+	runIntegrationTest(t, testAuthLocalNodeControlStream)
+}
+
+func TestIntegrationAgentlessConnection(t *testing.T) {
+	runIntegrationTest(t, testAgentlessConnection)
+}
+
+func TestIntegrationLeafAgentlessConnection(t *testing.T) {
+	runIntegrationTest(t, testTrustedClusterAgentless)
 }
 
 // testDifferentPinnedIP tests connection is rejected when source IP doesn't match the pinned one
@@ -726,7 +908,7 @@ func testInteroperability(t *testing.T, suite *integrationTestSuite) {
 		// 2 - ssh localhost tty
 		// should print "not a tty"
 		{
-			inCommand:   "tty",
+			inCommand:   "LC_ALL=C tty",
 			inStdin:     "",
 			outContains: "not a tty",
 			outFile:     false,
@@ -2288,7 +2470,7 @@ func testDisconnectScenarios(t *testing.T, suite *integrationTestSuite) {
 }
 
 func runDisconnectTest(t *testing.T, suite *integrationTestSuite, tc disconnectTestCase) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	teleport := suite.NewTeleportInstance(t)
@@ -2353,13 +2535,18 @@ func runDisconnectTest(t *testing.T, suite *integrationTestSuite, tc disconnectT
 
 		openSession := func() {
 			defer cancel()
-			cl, err := teleport.NewClient(helpers.ClientConfig{
+			cc := helpers.ClientConfig{
 				Login:   username,
 				Cluster: helpers.Site,
 				Host:    Host,
 				Port:    helpers.Port(t, teleport.SSH),
-			})
-			require.NoError(t, err)
+			}
+			cl, err := teleport.NewClient(cc)
+			if err != nil {
+				asyncErrors <- err
+				return
+			}
+
 			cl.Stdout = person
 			cl.Stdin = person
 
@@ -2377,7 +2564,7 @@ func runDisconnectTest(t *testing.T, suite *integrationTestSuite, tc disconnectT
 					asyncErrors <- badErrorErr
 				}
 			} else if err != nil && !errors.Is(err, io.EOF) && !isSSHError(err) {
-				asyncErrors <- fmt.Errorf("expected EOF, ExitError, or nil, got %v instead", err)
+				asyncErrors <- fmt.Errorf("expected EOF, ExitError, or nil, got %w instead", err)
 				return
 			}
 		}
@@ -2412,8 +2599,10 @@ func runDisconnectTest(t *testing.T, suite *integrationTestSuite, tc disconnectT
 }
 
 func isSSHError(err error) bool {
-	switch trace.Unwrap(err).(type) {
-	case *ssh.ExitError, *ssh.ExitMissingError:
+	var exitError *ssh.ExitError
+	var exitMissingError *ssh.ExitMissingError
+	switch err := trace.Unwrap(err); {
+	case errors.As(err, &exitError), errors.As(err, &exitMissingError):
 		return true
 	default:
 		return false
@@ -2687,6 +2876,22 @@ func twoClustersTunnel(t *testing.T, suite *integrationTestSuite, now time.Time,
 
 	// wait for active tunnel connections to be established
 	helpers.WaitForActiveTunnelConnections(t, b.Tunnel, a.Secrets.SiteName, 1)
+	require.EventuallyWithT(t, func(t *assert.CollectT) {
+		remoteSite, err := b.Tunnel.GetSite(a.Secrets.SiteName)
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		nodeWatcher, err := remoteSite.NodeWatcher()
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		nodes := nodeWatcher.GetNodes(ctx, func(server services.Node) bool {
+			return server.GetName() == a.Secrets.GetIdentity().ID.HostUUID
+		})
+		assert.Len(t, nodes, 1)
+	}, 10*time.Second, 200*time.Millisecond, "site-A node did not propagate to site-B proxy")
 
 	// via tunnel b->a:
 	tc, err = b.NewClient(helpers.ClientConfig{
@@ -2849,6 +3054,9 @@ func testHA(t *testing.T, suite *integrationTestSuite) {
 		"Two clusters do not see each other: tunnels are not working.")
 	require.Eventually(t, helpers.WaitForClusters(b.Tunnel, 1), 10*time.Second, 1*time.Second,
 		"Two clusters do not see each other: tunnels are not working.")
+
+	err = helpers.WaitForNodeCount(ctx, b, "cluster-a", 2)
+	require.NoError(t, err)
 
 	cmd := []string{"echo", "hello world"}
 	tc, err := b.NewClient(helpers.ClientConfig{
@@ -3991,6 +4199,22 @@ func testTrustedClusterAgentless(t *testing.T, suite *integrationTestSuite) {
 
 	// create agentless node in leaf cluster
 	node := testenv.CreateAgentlessNode(t, leaf.Process.GetAuthServer(), clusterAux, "leaf-agentless-node")
+	require.EventuallyWithT(t, func(t *assert.CollectT) {
+		remoteSite, err := main.Tunnel.GetSite(clusterAux)
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		nodeWatcher, err := remoteSite.NodeWatcher()
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		nodes := nodeWatcher.GetNodes(ctx, func(server services.Node) bool {
+			return server.GetName() == node.GetName()
+		})
+		assert.Len(t, nodes, 1)
+	}, 10*time.Second, 200*time.Millisecond, "leaf agentless node did not propagate to root proxy")
 
 	// connect to leaf agentless node
 	creds, err := helpers.GenerateUserCreds(helpers.UserCredsRequest{
@@ -6755,7 +6979,7 @@ func testSSHExitCode(t *testing.T, suite *integrationTestSuite) {
 		// A successful interactive session should have a zero status code
 		{
 			desc:           "Interactively Exit",
-			input:          "exit\n\r",
+			input:          "exit 0\n\r",
 			interactive:    true,
 			errorAssertion: require.NoError,
 		},

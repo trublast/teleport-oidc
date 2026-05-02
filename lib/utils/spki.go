@@ -56,7 +56,7 @@ outer:
 				continue outer
 			}
 		}
-		return trace.BadParameter(errorMessage)
+		return trace.BadParameter("%s", errorMessage)
 	}
 
 	return nil

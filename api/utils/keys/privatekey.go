@@ -124,6 +124,7 @@ func (k *PrivateKey) TLSCertificate(certPEMBlock []byte) (tls.Certificate, error
 	if err != nil {
 		return tls.Certificate{}, trace.Wrap(err)
 	}
+	cert.Leaf = x509Cert
 
 	if keyPub, ok := k.Public().(cryptoPublicKeyI); !ok {
 		return tls.Certificate{}, trace.BadParameter("private key does not contain a valid public key")

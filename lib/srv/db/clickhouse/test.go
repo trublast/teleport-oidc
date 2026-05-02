@@ -130,6 +130,30 @@ func encodeVersion() ([]byte, error) {
 
 }
 
+func encodeHello() ([]byte, error) {
+	var block proto.Block
+	if err := block.AddColumn("displayName()", "String"); err != nil {
+		return nil, trace.Wrap(err)
+	}
+	if err := block.AddColumn("version()", "String"); err != nil {
+		return nil, trace.Wrap(err)
+	}
+	if err := block.AddColumn("revision()", "UInt32"); err != nil {
+		return nil, trace.Wrap(err)
+	}
+	if err := block.AddColumn("timezone()", "String"); err != nil {
+		return nil, trace.Wrap(err)
+	}
+	if err := block.Append("ClickHouse", "23.4.2.11", uint32(0), "UTC"); err != nil {
+		return nil, trace.Wrap(err)
+	}
+	var chb chproto.Buffer
+	if err := block.Encode(&chb, clickhouse.ClientTCPProtocolVersion); err != nil {
+		return nil, trace.Wrap(err)
+	}
+	return chb.Buf, nil
+}
+
 func encodePing() ([]byte, error) {
 	block := proto.Block{}
 	if err := block.AddColumn("1", "UInt8"); err != nil {
@@ -162,17 +186,17 @@ func encodeTimezone() ([]byte, error) {
 
 }
 
-func (s *TestServer) serveHTTP() error {
-	const (
-		timeZoneQuery = "SELECT timezone()"
-		versionQuery  = "SELECT version()"
-		pingQuery     = "SELECT 1"
-	)
+const (
+	// HelloQuery is the query sent by clickhouse-go HTTP clients to fetch server metadata.
+	HelloQuery = "SELECT displayName(), version(), revision(), timezone()"
+	// PingQuery is the basic ClickHouse ping query.
+	PingQuery = "SELECT 1"
+)
 
+func (s *TestServer) serveHTTP() error {
 	encHandler := map[string]func() ([]byte, error){
-		timeZoneQuery: encodeTimezone,
-		versionQuery:  encodeVersion,
-		pingQuery:     encodePing,
+		HelloQuery: encodeHello,
+		PingQuery:  encodePing,
 	}
 
 	mux := http.NewServeMux()

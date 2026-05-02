@@ -40,6 +40,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/gravitational/teleport"
 	"github.com/gravitational/teleport/api"
@@ -6092,8 +6094,17 @@ func TestGetHeadlessAuthentication(t *testing.T) {
 	require.NoError(t, err)
 
 	assertTimeout := func(t require.TestingT, err error, i ...interface{}) {
+		if ht, ok := t.(*testing.T); ok {
+			ht.Helper()
+		}
 		require.Error(t, err)
-		require.ErrorContains(t, err, context.DeadlineExceeded.Error(), "expected context deadline error but got: %v", err)
+		s, ok := status.FromError(err)
+		require.True(t, ok)
+		if s.Code() == codes.Unknown {
+			require.ErrorContains(t, err, context.DeadlineExceeded.Error())
+			return
+		}
+		require.Equal(t, codes.DeadlineExceeded.String(), s.Code().String())
 	}
 
 	assertAccessDenied := func(t require.TestingT, err error, i ...interface{}) {

@@ -957,7 +957,7 @@ func (s *remoteSite) connThroughTunnel(req *sshutils.DialReq) (*sshutils.ChConn,
 		if req.Address != constants.RemoteAuthServer {
 			message = fmt.Sprintf("node %v is offline", req.Address)
 		}
-		err = trace.ConnectionProblem(nil, message)
+		err = trace.ConnectionProblem(nil, "%s", message)
 	}
 	return nil, err
 }

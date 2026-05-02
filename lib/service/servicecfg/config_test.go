@@ -16,7 +16,6 @@ package servicecfg
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -62,6 +61,7 @@ func TestDefaultConfig(t *testing.T) {
 		"aes256-ctr",
 	})
 	require.ElementsMatch(t, config.KEXAlgorithms, []string{
+		"mlkem768x25519-sha256",
 		"curve25519-sha256",
 		"curve25519-sha256@libssh.org",
 		"ecdh-sha2-nistp256",
@@ -82,7 +82,7 @@ func TestDefaultConfig(t *testing.T) {
 	require.Equal(t, auth.Limiter.MaxConnections, int64(defaults.LimiterMaxConnections))
 	require.Equal(t, auth.Limiter.MaxNumberOfUsers, defaults.LimiterMaxConcurrentUsers)
 	require.Equal(t, config.Auth.StorageConfig.Type, lite.GetName())
-	require.Equal(t, auth.StorageConfig.Params[defaults.BackendPath], filepath.Join(config.DataDir, defaults.BackendDir))
+	require.Empty(t, auth.StorageConfig.Params[defaults.BackendPath])
 
 	// SSH section
 	ssh := config.SSH

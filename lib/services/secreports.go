@@ -120,7 +120,7 @@ func UnmarshalAuditQuery(data []byte, opts ...MarshalOption) (*secreports.AuditQ
 	}
 	var out *secreports.AuditQuery
 	if err := utils.FastUnmarshal(data, &out); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	if err := out.CheckAndSetDefaults(); err != nil {
 		return nil, trace.Wrap(err)
@@ -164,7 +164,7 @@ func UnmarshalSecurityReport(data []byte, opts ...MarshalOption) (*secreports.Re
 	}
 	var out *secreports.Report
 	if err := utils.FastUnmarshal(data, &out); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	if err := out.CheckAndSetDefaults(); err != nil {
 		return nil, trace.Wrap(err)
@@ -206,7 +206,7 @@ func UnmarshalSecurityReportState(data []byte, opts ...MarshalOption) (*secrepor
 	}
 	var out *secreports.ReportState
 	if err := utils.FastUnmarshal(data, &out); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	if err := out.CheckAndSetDefaults(); err != nil {
 		return nil, trace.Wrap(err)
@@ -248,7 +248,7 @@ func UnmarshalSecurityCostLimiter(data []byte, opts ...MarshalOption) (*secrepor
 	}
 	var out *secreports.CostLimiter
 	if err := utils.FastUnmarshal(data, &out); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	if err := out.CheckAndSetDefaults(); err != nil {
 		return nil, trace.Wrap(err)

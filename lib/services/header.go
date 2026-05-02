@@ -47,7 +47,7 @@ func getHeaderProtoJSONOptions() *protojson.UnmarshalOptions {
 func unmarshalHeaderWithProtoJSON(data []byte) (types.ResourceHeader, error) {
 	var h types.MessageWithHeader
 	if err := getHeaderProtoJSONOptions().Unmarshal(data, protoadapt.MessageV2Of(&h)); err != nil {
-		return types.ResourceHeader{}, trace.BadParameter(err.Error())
+		return types.ResourceHeader{}, trace.BadParameter("%s", err.Error())
 	}
 
 	return h.ResourceHeader, nil

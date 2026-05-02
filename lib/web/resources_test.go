@@ -649,6 +649,14 @@ type mockedResourceAPIGetter struct {
 	mockGetGithubConnectors   func(ctx context.Context, withSecrets bool) ([]types.GithubConnector, error)
 	mockGetGithubConnector    func(ctx context.Context, id string, withSecrets bool) (types.GithubConnector, error)
 	mockDeleteGithubConnector func(ctx context.Context, id string) error
+	mockUpsertOIDCConnector   func(ctx context.Context, connector types.OIDCConnector) error
+	mockGetOIDCConnectors     func(ctx context.Context, withSecrets bool) ([]types.OIDCConnector, error)
+	mockGetOIDCConnector      func(ctx context.Context, id string, withSecrets bool) (types.OIDCConnector, error)
+	mockDeleteOIDCConnector   func(ctx context.Context, id string) error
+	mockUpsertSAMLConnector   func(ctx context.Context, connector types.SAMLConnector) error
+	mockGetSAMLConnectors     func(ctx context.Context, withSecrets bool) ([]types.SAMLConnector, error)
+	mockGetSAMLConnector      func(ctx context.Context, id string, withSecrets bool) (types.SAMLConnector, error)
+	mockDeleteSAMLConnector   func(ctx context.Context, id string) error
 	mockUpsertTrustedCluster  func(ctx context.Context, tc types.TrustedCluster) (types.TrustedCluster, error)
 	mockGetTrustedCluster     func(ctx context.Context, name string) (types.TrustedCluster, error)
 	mockGetTrustedClusters    func(ctx context.Context) ([]types.TrustedCluster, error)
@@ -715,6 +723,62 @@ func (m *mockedResourceAPIGetter) DeleteGithubConnector(ctx context.Context, id 
 	}
 
 	return trace.NotImplemented("mockDeleteGithubConnector not implemented")
+}
+
+func (m *mockedResourceAPIGetter) UpsertOIDCConnector(ctx context.Context, connector types.OIDCConnector) error {
+	if m.mockUpsertOIDCConnector != nil {
+		return m.mockUpsertOIDCConnector(ctx, connector)
+	}
+	return trace.NotImplemented("mockUpsertOIDCConnector not implemented")
+}
+
+func (m *mockedResourceAPIGetter) GetOIDCConnectors(ctx context.Context, withSecrets bool) ([]types.OIDCConnector, error) {
+	if m.mockGetOIDCConnectors != nil {
+		return m.mockGetOIDCConnectors(ctx, withSecrets)
+	}
+	return nil, trace.NotImplemented("mockGetOIDCConnectors not implemented")
+}
+
+func (m *mockedResourceAPIGetter) GetOIDCConnector(ctx context.Context, id string, withSecrets bool) (types.OIDCConnector, error) {
+	if m.mockGetOIDCConnector != nil {
+		return m.mockGetOIDCConnector(ctx, id, withSecrets)
+	}
+	return nil, trace.NotImplemented("mockGetOIDCConnector not implemented")
+}
+
+func (m *mockedResourceAPIGetter) DeleteOIDCConnector(ctx context.Context, id string) error {
+	if m.mockDeleteOIDCConnector != nil {
+		return m.mockDeleteOIDCConnector(ctx, id)
+	}
+	return trace.NotImplemented("mockDeleteOIDCConnector not implemented")
+}
+
+func (m *mockedResourceAPIGetter) UpsertSAMLConnector(ctx context.Context, connector types.SAMLConnector) error {
+	if m.mockUpsertSAMLConnector != nil {
+		return m.mockUpsertSAMLConnector(ctx, connector)
+	}
+	return trace.NotImplemented("mockUpsertSAMLConnector not implemented")
+}
+
+func (m *mockedResourceAPIGetter) GetSAMLConnectors(ctx context.Context, withSecrets bool) ([]types.SAMLConnector, error) {
+	if m.mockGetSAMLConnectors != nil {
+		return m.mockGetSAMLConnectors(ctx, withSecrets)
+	}
+	return nil, trace.NotImplemented("mockGetSAMLConnectors not implemented")
+}
+
+func (m *mockedResourceAPIGetter) GetSAMLConnector(ctx context.Context, id string, withSecrets bool) (types.SAMLConnector, error) {
+	if m.mockGetSAMLConnector != nil {
+		return m.mockGetSAMLConnector(ctx, id, withSecrets)
+	}
+	return nil, trace.NotImplemented("mockGetSAMLConnector not implemented")
+}
+
+func (m *mockedResourceAPIGetter) DeleteSAMLConnector(ctx context.Context, id string) error {
+	if m.mockDeleteSAMLConnector != nil {
+		return m.mockDeleteSAMLConnector(ctx, id)
+	}
+	return trace.NotImplemented("mockDeleteSAMLConnector not implemented")
 }
 
 func (m *mockedResourceAPIGetter) UpsertTrustedCluster(ctx context.Context, tc types.TrustedCluster) (types.TrustedCluster, error) {

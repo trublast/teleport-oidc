@@ -2073,7 +2073,7 @@ func onLogin(cf *CLIConf) error {
 			if capabilities.RequestPrompt != "" {
 				msg = msg + ", prompt=" + capabilities.RequestPrompt
 			}
-			err := trace.BadParameter(msg)
+			err := trace.BadParameter("%s", msg)
 			logoutErr := tc.Logout()
 			return trace.NewAggregate(err, logoutErr)
 		}
@@ -4786,7 +4786,7 @@ func onRequestResolution(cf *CLIConf, tc *client.TeleportClient, req types.Acces
 		if reason := req.GetResolveReason(); reason != "" {
 			msg = fmt.Sprintf("%s, reason=%q", msg, reason)
 		}
-		return trace.Errorf(msg)
+		return trace.Errorf("%s", msg)
 	}
 
 	msg := "\nApproval received, getting updated certificates...\n\n"

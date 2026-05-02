@@ -115,7 +115,7 @@ func UnmarshalOIDCConnector(bytes []byte, opts ...MarshalOption) (types.OIDCConn
 	case types.V2, types.V3:
 		var c types.OIDCConnectorV3
 		if err := utils.FastUnmarshal(bytes, &c); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 		if err := c.CheckAndSetDefaults(); err != nil {
 			return nil, trace.Wrap(err)

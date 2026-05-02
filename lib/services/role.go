@@ -3166,7 +3166,7 @@ func UnmarshalRoleV6(bytes []byte, opts ...MarshalOption) (*types.RoleV6, error)
 	}
 	var role types.RoleV6
 	if err := utils.FastUnmarshal(bytes, &role); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 
 	if err := ValidateRole(&role); err != nil {

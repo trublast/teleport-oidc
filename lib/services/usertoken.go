@@ -31,7 +31,7 @@ func UnmarshalUserToken(bytes []byte, opts ...MarshalOption) (types.UserToken, e
 
 	var token types.UserTokenV3
 	if err := utils.FastUnmarshal(bytes, &token); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	if err := token.CheckAndSetDefaults(); err != nil {
 		return nil, trace.Wrap(err)

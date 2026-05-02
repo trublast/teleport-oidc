@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"path"
@@ -53,7 +54,7 @@ func (h *Handler) CreateUpload(ctx context.Context, sessionID session.ID) (*even
 	h.Logger.Debugf("Creating upload at %s", uploadPath)
 	// Make sure we don't overwrite an existing upload
 	_, err := h.gcsClient.Bucket(h.Config.Bucket).Object(uploadPath).Attrs(ctx)
-	if err != storage.ErrObjectNotExist {
+	if !errors.Is(err, storage.ErrObjectNotExist) {
 		if err != nil {
 			return nil, convertGCSError(err)
 		}
@@ -108,7 +109,7 @@ func (h *Handler) CompleteUpload(ctx context.Context, upload events.StreamUpload
 	// If the session has been already created, move to cleanup
 	sessionPath := h.path(upload.SessionID)
 	_, err := h.gcsClient.Bucket(h.Config.Bucket).Object(sessionPath).Attrs(ctx)
-	if err != storage.ErrObjectNotExist {
+	if !errors.Is(err, storage.ErrObjectNotExist) {
 		if err != nil {
 			return convertGCSError(err)
 		}

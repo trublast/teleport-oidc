@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/gravitational/trace"
-	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -62,7 +61,7 @@ func TestEtcd(t *testing.T) {
 		t.Skip("This test requires etcd, run `make run-etcd` and set TELEPORT_ETCD_TEST=yes in your environment")
 	}
 
-	newBackend := func(options ...test.ConstructionOption) (backend.Backend, *clockwork.FakeClock, error) {
+	newBackend := func(options ...test.ConstructionOption) (backend.Backend, test.AdvancingClock, error) {
 		opts, err := test.ApplyOptions(options)
 		if err != nil {
 			return nil, nil, trace.Wrap(err)

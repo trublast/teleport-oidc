@@ -4879,7 +4879,7 @@ func TestForwardingTraces(t *testing.T) {
 			require.NoError(t, err)
 
 			if traceCfg.Enabled && traceCfg.SamplingRate > 0 {
-				collector.WaitForExport()
+				waitForTraceExport(t, collector)
 			}
 
 			// ensure login doesn't generate any spans from tsh if spans are being sampled
@@ -4895,7 +4895,7 @@ func TestForwardingTraces(t *testing.T) {
 			require.NoError(t, err)
 
 			if traceCfg.Enabled {
-				collector.WaitForExport()
+				waitForTraceExport(t, collector)
 			}
 
 			tt.spanAssertion(t, collector.Spans())
@@ -4993,9 +4993,9 @@ func TestExportingTraces(t *testing.T) {
 			require.NoError(t, err)
 
 			if traceCfg.Enabled {
-				teleportCollector.WaitForExport()
+				waitForTraceExport(t, teleportCollector)
 			}
-			tshCollector.WaitForExport()
+			waitForTraceExport(t, tshCollector)
 
 			tt.teleportSpanAssertion(t, teleportCollector.Spans())
 			tt.tshSpanAssertion(t, tshCollector.Spans())
@@ -5010,13 +5010,29 @@ func TestExportingTraces(t *testing.T) {
 			require.NoError(t, err)
 
 			if traceCfg.Enabled {
-				teleportCollector.WaitForExport()
+				waitForTraceExport(t, teleportCollector)
 			}
-			tshCollector.WaitForExport()
+			waitForTraceExport(t, tshCollector)
 
 			tt.teleportSpanAssertion(t, teleportCollector.Spans())
 			tt.tshSpanAssertion(t, tshCollector.Spans())
 		})
+	}
+}
+
+func waitForTraceExport(t *testing.T, collector *tracing.Collector) {
+	t.Helper()
+
+	exported := make(chan struct{})
+	go func() {
+		collector.WaitForExport()
+		close(exported)
+	}()
+
+	select {
+	case <-exported:
+	case <-time.After(10 * time.Second):
+		t.Fatal("timed out waiting for traces to be exported")
 	}
 }
 
@@ -5188,7 +5204,7 @@ func TestBenchmarkPostgres(t *testing.T) {
 	}, setHomePath(tmpHomePath), setMockSSOLogin(authServer, alice, connector.GetName()))
 	require.NoError(t, err)
 
-	benchmarkErrorLineParser := regexp.MustCompile("`host=(.+) +user=(.+) database=(.+)`: (.+)$")
+	benchmarkErrorLineParser := regexp.MustCompile("`user=(.+?) database=(.+?)`:(.+)$")
 	args := []string{
 		"bench", "postgres", "--insecure",
 		// Benchmark options to limit benchmark to a single execution.
@@ -5214,9 +5230,9 @@ func TestBenchmarkPostgres(t *testing.T) {
 			expectedDatabase: "database",
 		},
 		"direct connection": {
-			database:            "postgres://direct_user@test:5432/direct_database",
-			expectedErrContains: "hostname resolving error",
-			expectedHost:        "test",
+			database:            "postgres://direct_user@direct-pg:5432/direct_database",
+			expectedErrContains: "lookup direct-pg",
+			expectedHost:        "direct-pg",
 			expectedUser:        "direct_user",
 			expectedDatabase:    "direct_database",
 		},
@@ -5242,18 +5258,20 @@ func TestBenchmarkPostgres(t *testing.T) {
 			for _, line := range lines {
 				if bytes.HasPrefix(line, []byte("* Last error:")) {
 					errorLine = string(line)
-					break
+				} else if errorLine != "" {
+					// pgx v5 error details are tab-indented on continuation lines.
+					errorLine += string(line)
 				}
 			}
 			require.NotEmpty(t, errorLine, "expected benchmark to fail")
 
 			parsed := benchmarkErrorLineParser.FindStringSubmatch(errorLine)
-			require.Len(t, parsed, 5, "unexpecter benchmark error: %q", errorLine)
+			require.Len(t, parsed, 4, "unexpected benchmark error: %q", errorLine)
 
-			host, username, database, benchmarkError := parsed[1], parsed[2], parsed[3], parsed[4]
+			username, database, benchmarkError := parsed[1], parsed[2], parsed[3]
 
 			require.Contains(t, benchmarkError, tc.expectedErrContains)
-			require.Equal(t, tc.expectedHost, host)
+			require.Contains(t, benchmarkError, tc.expectedHost)
 			require.Equal(t, tc.expectedUser, username)
 			require.Equal(t, tc.expectedDatabase, database)
 		})

@@ -420,11 +420,11 @@ func TestStart(t *testing.T) {
 	var servers []types.AppServer
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
 		apps, err := s.authServer.AuthServer.GetApplicationServers(s.closeContext, defaults.Namespace)
-		if !assert.NoError(t, err) {
+		if !assert.NoError(collect, err) {
 			return
 		}
 
-		if !assert.Len(t, apps, 2) {
+		if !assert.Len(collect, apps, 2) {
 			return
 		}
 		servers = apps

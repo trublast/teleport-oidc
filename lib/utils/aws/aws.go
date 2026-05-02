@@ -151,7 +151,7 @@ func IsSignedByAWSSigV4(r *http.Request) bool {
 func VerifyAWSSignature(req *http.Request, credentials *credentials.Credentials) error {
 	sigV4, err := ParseSigV4(req.Header.Get("Authorization"))
 	if err != nil {
-		return trace.BadParameter(err.Error())
+		return trace.BadParameter("%s", err.Error())
 	}
 
 	// Verifies the request is signed by the expected access key ID.
@@ -190,7 +190,7 @@ func VerifyAWSSignature(req *http.Request, credentials *credentials.Credentials)
 	// originated from AWS CLI and reuse it as a timestamp during request signing call.
 	t, err := time.Parse(AmzDateTimeFormat, reqCopy.Header.Get(AmzDateHeader))
 	if err != nil {
-		return trace.BadParameter(err.Error())
+		return trace.BadParameter("%s", err.Error())
 	}
 
 	signer := NewSigner(credentials, sigV4.Service)

@@ -25,8 +25,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription v1.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.1.0
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c
-	github.com/ClickHouse/ch-go v0.69.0
-	github.com/ClickHouse/clickhouse-go/v2 v2.42.0
+	github.com/ClickHouse/ch-go v0.71.0
+	github.com/ClickHouse/clickhouse-go/v2 v2.45.0
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/ThalesIgnite/crypto11 v1.2.5
@@ -82,7 +82,7 @@ require (
 	github.com/go-mysql-org/go-mysql v1.5.0 // replaced
 	github.com/go-piv/piv-go v1.11.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/go-webauthn/webauthn v0.8.6
+	github.com/go-webauthn/webauthn v0.11.2
 	github.com/gocql/gocql v1.5.2
 	github.com/gofrs/flock v0.8.1
 	github.com/gogo/protobuf v1.3.2 // replaced
@@ -91,7 +91,7 @@ require (
 	github.com/google/go-attestation v0.5.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-querystring v1.1.0
-	github.com/google/go-tpm v0.9.0
+	github.com/google/go-tpm v0.9.1
 	github.com/google/go-tpm-tools v0.4.4
 	github.com/google/safetext v0.0.0-20240104143208-7a7d9b3d812f
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -274,7 +274,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
-	github.com/dmarkham/enumer v1.6.1 // indirect
+	github.com/dmarkham/enumer v1.6.3 // indirect
 	github.com/docker/cli v29.4.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
@@ -319,7 +319,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.25.5 // indirect
 	github.com/go-openapi/validate v0.25.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/go-webauthn/x v0.1.4 // indirect
+	github.com/go-webauthn/x v0.1.14 // indirect
 	github.com/gobuffalo/flect v1.0.3 // indirect
 	github.com/goccy/go-json v0.10.4 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
@@ -345,7 +345,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
-	github.com/hashicorp/go-version v1.7.0 // indirect
+	github.com/hashicorp/go-version v1.8.0 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/in-toto/attestation v1.1.2 // indirect
@@ -365,7 +365,7 @@ require (
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/joshlf/testutil v0.0.0-20170608050642-b5d8aa79d93d // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
-	github.com/klauspost/compress v1.18.1 // indirect
+	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -409,7 +409,7 @@ require (
 	github.com/paulmach/orb v0.12.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
-	github.com/pierrec/lz4/v4 v4.1.22 // indirect
+	github.com/pierrec/lz4/v4 v4.1.25 // indirect
 	github.com/pingcap/errors v0.11.5-0.20201126102027-b0a155152ca3 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect

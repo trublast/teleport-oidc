@@ -618,14 +618,14 @@ func (s *localSite) getConn(params reversetunnelclient.DialParams) (conn net.Con
 	// Skip direct dial when the tunnel error is not a not found error. This
 	// means the agent is tunneling but the connection failed for some reason.
 	if !trace.IsNotFound(tunnelErr) {
-		return nil, false, trace.ConnectionProblem(tunnelErr, tunnelMsg)
+		return nil, false, trace.ConnectionProblem(tunnelErr, "%s", tunnelMsg)
 	}
 
 	skip, err := s.skipDirectDial(params)
 	if err != nil {
 		return nil, false, trace.Wrap(err)
 	} else if skip {
-		return nil, false, trace.ConnectionProblem(tunnelErr, tunnelMsg)
+		return nil, false, trace.ConnectionProblem(tunnelErr, "%s", tunnelMsg)
 	}
 
 	// If no tunnel connection was found, dial to the target host.
@@ -635,7 +635,7 @@ func (s *localSite) getConn(params reversetunnelclient.DialParams) (conn net.Con
 		directMsg := getTunnelErrorMessage(params, "direct dial", directErr)
 		s.log.WithError(directErr).WithField("address", params.To.String()).Debug("Error occurred while dialing directly.")
 		aggregateErr := trace.NewAggregate(tunnelErr, peerErr, directErr)
-		return nil, false, trace.ConnectionProblem(aggregateErr, directMsg)
+		return nil, false, trace.ConnectionProblem(aggregateErr, "%s", directMsg)
 	}
 
 	// Return a direct dialed connection.

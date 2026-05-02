@@ -18,6 +18,7 @@ package gcssessions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -241,7 +242,7 @@ func (h *Handler) Upload(ctx context.Context, sessionID session.ID, reader io.Re
 
 	// Make sure we don't overwrite an existing recording.
 	_, err := h.gcsClient.Bucket(h.Config.Bucket).Object(path).Attrs(ctx)
-	if err != storage.ErrObjectNotExist {
+	if !errors.Is(err, storage.ErrObjectNotExist) {
 		if err != nil {
 			return "", convertGCSError(err)
 		}
@@ -334,8 +335,8 @@ func convertGCSError(err error, args ...interface{}) error {
 		return nil
 	}
 
-	switch err {
-	case storage.ErrBucketNotExist, storage.ErrObjectNotExist:
+	switch {
+	case errors.Is(err, storage.ErrBucketNotExist), errors.Is(err, storage.ErrObjectNotExist):
 		return trace.NotFound(err.Error(), args...)
 	default:
 		return trace.Wrap(err, args...)

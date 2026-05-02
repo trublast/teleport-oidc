@@ -36,15 +36,15 @@ func ConvertResponseError(err error) error {
 	case *azcore.ResponseError:
 		switch v.StatusCode {
 		case http.StatusForbidden:
-			return trace.AccessDenied(v.Error())
+			return trace.AccessDenied("%s", v.Error())
 		case http.StatusConflict:
-			return trace.AlreadyExists(v.Error())
+			return trace.AlreadyExists("%s", v.Error())
 		case http.StatusNotFound:
-			return trace.NotFound(v.Error())
+			return trace.NotFound("%s", v.Error())
 		}
 
 	case *azidentity.AuthenticationFailedError:
-		return trace.AccessDenied(v.Error())
+		return trace.AccessDenied("%s", v.Error())
 
 	}
 	return err // Return unmodified.

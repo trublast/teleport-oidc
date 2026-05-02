@@ -44,16 +44,16 @@ func ConvertRequestFailureError(err error) error {
 func convertRequestFailureErrorFromStatusCode(statusCode int, requestErr error) error {
 	switch statusCode {
 	case http.StatusForbidden:
-		return trace.AccessDenied(requestErr.Error())
+		return trace.AccessDenied("%s", requestErr.Error())
 	case http.StatusConflict:
-		return trace.AlreadyExists(requestErr.Error())
+		return trace.AlreadyExists("%s", requestErr.Error())
 	case http.StatusNotFound:
-		return trace.NotFound(requestErr.Error())
+		return trace.NotFound("%s", requestErr.Error())
 	case http.StatusBadRequest:
 		// Some services like memorydb, redshiftserverless may return 400 with
 		// "AccessDeniedException" instead of 403.
 		if strings.Contains(requestErr.Error(), redshiftserverless.ErrCodeAccessDeniedException) {
-			return trace.AccessDenied(requestErr.Error())
+			return trace.AccessDenied("%s", requestErr.Error())
 		}
 	}
 
@@ -66,18 +66,18 @@ func ConvertIAMError(err error) error {
 	if awsErr, ok := err.(awserr.Error); ok {
 		switch awsErr.Code() {
 		case iam.ErrCodeUnmodifiableEntityException:
-			return trace.AccessDenied(awsErr.Error())
+			return trace.AccessDenied("%s", awsErr.Error())
 
 		case iam.ErrCodeNoSuchEntityException:
-			return trace.NotFound(awsErr.Error())
+			return trace.NotFound("%s", awsErr.Error())
 
 		case iam.ErrCodeMalformedPolicyDocumentException,
 			iam.ErrCodeInvalidInputException,
 			iam.ErrCodeDeleteConflictException:
-			return trace.BadParameter(awsErr.Error())
+			return trace.BadParameter("%s", awsErr.Error())
 
 		case iam.ErrCodeLimitExceededException:
-			return trace.LimitExceeded(awsErr.Error())
+			return trace.LimitExceeded("%s", awsErr.Error())
 		}
 	}
 
@@ -93,17 +93,17 @@ func ConvertIAMv2Error(err error) error {
 
 	var entityExistsError *iamTypes.EntityAlreadyExistsException
 	if errors.As(err, &entityExistsError) {
-		return trace.AlreadyExists(*entityExistsError.Message)
+		return trace.AlreadyExists("%s", *entityExistsError.Message)
 	}
 
 	var entityNotFound *iamTypes.NoSuchEntityException
 	if errors.As(err, &entityNotFound) {
-		return trace.NotFound(*entityNotFound.Message)
+		return trace.NotFound("%s", *entityNotFound.Message)
 	}
 
 	var malformedPolicyDocument *iamTypes.MalformedPolicyDocumentException
 	if errors.As(err, &malformedPolicyDocument) {
-		return trace.BadParameter(*malformedPolicyDocument.Message)
+		return trace.BadParameter("%s", *malformedPolicyDocument.Message)
 	}
 
 	var re *awshttp.ResponseError

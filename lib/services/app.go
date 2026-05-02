@@ -95,7 +95,7 @@ func UnmarshalApp(data []byte, opts ...MarshalOption) (types.Application, error)
 	case types.V3:
 		var app types.AppV3
 		if err := utils.FastUnmarshal(data, &app); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 		if err := app.CheckAndSetDefaults(); err != nil {
 			return nil, trace.Wrap(err)
@@ -156,7 +156,7 @@ func UnmarshalAppServer(data []byte, opts ...MarshalOption) (types.AppServer, er
 	case types.V3:
 		var s types.AppServerV3
 		if err := utils.FastUnmarshal(data, &s); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 		if err := s.CheckAndSetDefaults(); err != nil {
 			return nil, trace.Wrap(err)

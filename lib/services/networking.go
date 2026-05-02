@@ -37,7 +37,7 @@ func UnmarshalClusterNetworkingConfig(bytes []byte, opts ...MarshalOption) (type
 	}
 
 	if err := utils.FastUnmarshal(bytes, &netConfig); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 
 	err = netConfig.CheckAndSetDefaults()

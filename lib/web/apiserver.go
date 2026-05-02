@@ -4382,7 +4382,7 @@ func rateLimitRequest(r *http.Request, limiter *limiter.RateLimiter) error {
 	err = limiter.RegisterRequest(remote, nil /* customRate */)
 	// MaxRateError doesn't play well with errors.Is, hence the type assertion.
 	if _, ok := err.(*ratelimit.MaxRateError); ok {
-		return trace.LimitExceeded(err.Error())
+		return trace.LimitExceeded("%s", err.Error())
 	}
 	return trace.Wrap(err)
 }
@@ -4391,7 +4391,7 @@ func (h *Handler) validateCookie(w http.ResponseWriter, r *http.Request) (*Sessi
 	const missingCookieMsg = "missing session cookie"
 	cookie, err := r.Cookie(websession.CookieName)
 	if err != nil || (cookie != nil && cookie.Value == "") {
-		return nil, trace.AccessDenied(missingCookieMsg)
+		return nil, trace.AccessDenied("%s", missingCookieMsg)
 	}
 	decodedCookie, err := websession.DecodeCookie(cookie.Value)
 	if err != nil {

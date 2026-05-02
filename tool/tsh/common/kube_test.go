@@ -323,7 +323,11 @@ func TestKubeSelection(t *testing.T) {
 		},
 	)
 	testenv.WithInsecureDevMode(t, true)
-	testenv.WithResyncInterval(t, 0)
+	oldResyncInterval := defaults.ResyncInterval
+	defaults.ResyncInterval = 100 * time.Millisecond
+	t.Cleanup(func() {
+		defaults.ResyncInterval = oldResyncInterval
+	})
 
 	// Create a role that allows the user to request access to a restricted
 	// cluster but not to access it directly.

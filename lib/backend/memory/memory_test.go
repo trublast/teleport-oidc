@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestMemory(t *testing.T) {
-	newBackend := func(options ...test.ConstructionOption) (backend.Backend, *clockwork.FakeClock, error) {
+	newBackend := func(options ...test.ConstructionOption) (backend.Backend, test.AdvancingClock, error) {
 		cfg, err := test.ApplyOptions(options)
 
 		if err != nil {

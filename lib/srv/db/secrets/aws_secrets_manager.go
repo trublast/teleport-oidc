@@ -280,9 +280,9 @@ func convertSecretsManagerError(err error) error {
 	// Match by exception code as many errors are sharing the same status code.
 	switch awsError.Code() {
 	case secretsmanager.ErrCodeResourceExistsException:
-		return trace.AlreadyExists(awsError.Error())
+		return trace.AlreadyExists("%s", awsError.Error())
 	case secretsmanager.ErrCodeResourceNotFoundException:
-		return trace.NotFound(awsError.Error())
+		return trace.NotFound("%s", awsError.Error())
 	}
 
 	// Match by status code.

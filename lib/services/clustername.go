@@ -47,7 +47,7 @@ func UnmarshalClusterName(bytes []byte, opts ...MarshalOption) (types.ClusterNam
 	}
 
 	if err := utils.FastUnmarshal(bytes, &clusterName); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 
 	err = clusterName.CheckAndSetDefaults()

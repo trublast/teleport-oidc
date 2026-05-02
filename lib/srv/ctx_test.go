@@ -40,7 +40,7 @@ func TestDecodeChildError(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, DecodeChildError(&buf))
 
-	targetErr := trace.NotFound(user.UnknownUserError("test").Error())
+	targetErr := trace.NotFound("%s", user.UnknownUserError("test").Error())
 
 	writeChildError(&buf, targetErr)
 

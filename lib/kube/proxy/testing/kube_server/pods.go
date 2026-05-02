@@ -17,8 +17,8 @@ limitations under the License.
 package kubeserver
 
 import (
-	"encoding/json"
 	"io"
+	"mime"
 	"net/http"
 	"path/filepath"
 	"sort"
@@ -27,8 +27,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/gravitational/teleport/api/types"
+	"github.com/gravitational/teleport/lib/kube/proxy/responsewriters"
 )
 
 var podList = corev1.PodList{
@@ -107,7 +110,7 @@ func (s *KubeMockServer) getPod(w http.ResponseWriter, req *http.Request, p http
 func (s *KubeMockServer) deletePod(w http.ResponseWriter, req *http.Request, p httprouter.Params) (any, error) {
 	namespace := p.ByName("namespace")
 	name := p.ByName("name")
-	deleteOpts, err := parseDeleteCollectionBody(req.Body)
+	deleteOpts, err := parseDeleteCollectionBody(req)
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
@@ -141,15 +144,48 @@ func (s *KubeMockServer) DeletedPods(reqID string) []string {
 
 // parseDeleteCollectionBody parses the request body targeted to pod collection
 // endpoints.
-func parseDeleteCollectionBody(r io.Reader) (metav1.DeleteOptions, error) {
+func parseDeleteCollectionBody(req *http.Request) (metav1.DeleteOptions, error) {
 	into := metav1.DeleteOptions{}
-	data, err := io.ReadAll(r)
+	data, err := io.ReadAll(req.Body)
+	_ = req.Body.Close()
 	if err != nil {
 		return into, trace.Wrap(err)
 	}
 	if len(data) == 0 {
 		return into, nil
 	}
-	err = json.Unmarshal(data, &into)
-	return into, trace.Wrap(err)
+
+	decoder, err := newDecoderForContentType(responsewriters.GetContentTypeHeader(req.Header))
+	if err != nil {
+		return into, trace.Wrap(err)
+	}
+	obj, _, err := decoder.Decode(data, nil /* defaults */, &into)
+	if err != nil {
+		return into, trace.Wrap(err)
+	}
+	deleteOptions, ok := obj.(*metav1.DeleteOptions)
+	if !ok {
+		return into, trace.BadParameter("expected DeleteOptions, got %T", obj)
+	}
+	return *deleteOptions, nil
+}
+
+func newDecoderForContentType(contentType string) (runtime.Decoder, error) {
+	mediaType, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return nil, trace.WrapWithMessage(err, "unable to parse %q header %q", responsewriters.ContentTypeHeader, contentType)
+	}
+	decoder, err := newClientNegotiator().Decoder(mediaType, params)
+	return decoder, trace.Wrap(err)
+}
+
+// newClientNegotiator creates a negotiator that can decode the content types
+// used by Kubernetes clients, including protobuf DeleteOptions bodies.
+func newClientNegotiator() runtime.ClientNegotiator {
+	return runtime.NewClientNegotiator(
+		kubeCodecs.WithoutConversion(),
+		schema.GroupVersion{
+			Version: "v1",
+		},
+	)
 }

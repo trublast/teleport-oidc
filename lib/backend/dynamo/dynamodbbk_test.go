@@ -59,7 +59,7 @@ func TestDynamoDB(t *testing.T) {
 		"poll_stream_period": 300 * time.Millisecond,
 	}
 
-	newBackend := func(options ...test.ConstructionOption) (backend.Backend, *clockwork.FakeClock, error) {
+	newBackend := func(options ...test.ConstructionOption) (backend.Backend, test.AdvancingClock, error) {
 		testCfg, err := test.ApplyOptions(options)
 		if err != nil {
 			return nil, nil, trace.Wrap(err)

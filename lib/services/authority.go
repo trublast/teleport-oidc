@@ -447,7 +447,7 @@ func MarshalCertRoles(roles []string) (string, error) {
 func UnmarshalCertRoles(data string) ([]string, error) {
 	var certRoles types.CertRoles
 	if err := utils.FastUnmarshal([]byte(data), &certRoles); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	return certRoles.Roles, nil
 }
@@ -467,7 +467,7 @@ func UnmarshalCertAuthority(bytes []byte, opts ...MarshalOption) (types.CertAuth
 	case types.V2:
 		var ca types.CertAuthorityV2
 		if err := utils.FastUnmarshal(bytes, &ca); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 
 		if err := ValidateCertAuthority(&ca); err != nil {

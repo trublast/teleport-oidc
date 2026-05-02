@@ -37,7 +37,7 @@ func UnmarshalServerInfo(bytes []byte, opts ...MarshalOption) (types.ServerInfo,
 
 	var si types.ServerInfoV1
 	if err := utils.FastUnmarshal(bytes, &si); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	if err := si.CheckAndSetDefaults(); err != nil {
 		return nil, trace.Wrap(err)

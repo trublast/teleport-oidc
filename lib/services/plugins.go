@@ -85,7 +85,7 @@ func UnmarshalPlugin(data []byte, opts ...MarshalOption) (types.Plugin, error) {
 	case types.V1:
 		var plugin types.PluginV1
 		if err := jsonpb.Unmarshal(bytes.NewReader(data), &plugin); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 		if err := plugin.CheckAndSetDefaults(); err != nil {
 			return nil, trace.Wrap(err)

@@ -71,7 +71,7 @@ func ConnectProxyTransport(sconn ssh.Conn, req *DialReq, exclusive bool) (conn *
 		if len(errMessage) == 0 {
 			errMessage = fmt.Sprintf("failed connecting to %v [%v]", req.Address, req.ServerID)
 		}
-		return nil, false, trace.Errorf(errMessage)
+		return nil, false, trace.Errorf("%s", errMessage)
 	}
 
 	if exclusive {

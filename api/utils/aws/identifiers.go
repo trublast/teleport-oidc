@@ -151,13 +151,13 @@ var (
 	// The regex matches the following from left to right:
 	// - starts with 2 lower case letters that represents a geo region like a
 	//   country code
-	// - optional -gov, -iso, -isob for corresponding partitions
+	// - optional -gov, -iso, -isob, -isoe, -isof for corresponding partitions
 	// - a word that should be a direction like "east", "west", etc.
 	// - a number counter
 	//
 	// Reference:
 	// https://github.com/aws/aws-sdk-go-v2/blob/main/codegen/smithy-aws-go-codegen/src/main/resources/software/amazon/smithy/aws/go/codegen/endpoints.json
-	matchRegion = regexp.MustCompile(`^[a-z]{2}(-gov|-iso|-isob)?-\w+-\d+$`)
+	matchRegion = regexp.MustCompile(`^(eusc-)?[a-z]{2}(-gov|-iso|-isob|-isoe|-isof)?-\w+-\d+$`)
 
 	// https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateWorkGroup.html
 	matchAthenaWorkgroupName = regexp.MustCompile(`^[a-zA-Z0-9._-]{1,128}$`).MatchString

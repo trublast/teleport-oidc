@@ -349,7 +349,7 @@ func (b *Backend) GetName() string {
 func (b *Backend) Create(ctx context.Context, item backend.Item) (*backend.Lease, error) {
 	err := b.create(ctx, item, modeCreate)
 	if trace.IsCompareFailed(err) {
-		err = trace.AlreadyExists(err.Error())
+		err = trace.AlreadyExists("%s", err.Error())
 	}
 	if err != nil {
 		return nil, trace.Wrap(err)
@@ -371,7 +371,7 @@ func (b *Backend) Put(ctx context.Context, item backend.Item) (*backend.Lease, e
 func (b *Backend) Update(ctx context.Context, item backend.Item) (*backend.Lease, error) {
 	err := b.create(ctx, item, modeUpdate)
 	if trace.IsCompareFailed(err) {
-		err = trace.NotFound(err.Error())
+		err = trace.NotFound("%s", err.Error())
 	}
 	if err != nil {
 		return nil, trace.Wrap(err)
@@ -551,7 +551,7 @@ func (b *Backend) CompareAndSwap(ctx context.Context, expected backend.Item, rep
 	if err != nil {
 		// in this case let's use more specific compare failed error
 		if trace.IsAlreadyExists(err) {
-			return nil, trace.CompareFailed(err.Error())
+			return nil, trace.CompareFailed("%s", err.Error())
 		}
 		return nil, trace.Wrap(err)
 	}
@@ -606,7 +606,7 @@ func (b *Backend) KeepAlive(ctx context.Context, lease backend.Lease, expires ti
 	_, err := b.svc.UpdateItemWithContext(ctx, input)
 	err = convertError(err)
 	if trace.IsCompareFailed(err) {
-		err = trace.NotFound(err.Error())
+		err = trace.NotFound("%s", err.Error())
 	}
 	return err
 }
@@ -960,17 +960,17 @@ func convertError(err error) error {
 	}
 	switch aerr.Code() {
 	case dynamodb.ErrCodeConditionalCheckFailedException:
-		return trace.CompareFailed(aerr.Error())
+		return trace.CompareFailed("%s", aerr.Error())
 	case dynamodb.ErrCodeProvisionedThroughputExceededException:
-		return trace.ConnectionProblem(aerr, aerr.Error())
+		return trace.ConnectionProblem(aerr, "%s", aerr.Error())
 	case dynamodb.ErrCodeResourceNotFoundException, applicationautoscaling.ErrCodeObjectNotFoundException:
-		return trace.NotFound(aerr.Error())
+		return trace.NotFound("%s", aerr.Error())
 	case dynamodb.ErrCodeItemCollectionSizeLimitExceededException:
-		return trace.BadParameter(aerr.Error())
+		return trace.BadParameter("%s", aerr.Error())
 	case dynamodb.ErrCodeInternalServerError:
-		return trace.BadParameter(aerr.Error())
+		return trace.BadParameter("%s", aerr.Error())
 	case dynamodbstreams.ErrCodeExpiredIteratorException, dynamodbstreams.ErrCodeLimitExceededException, dynamodbstreams.ErrCodeTrimmedDataAccessException:
-		return trace.ConnectionProblem(aerr, aerr.Error())
+		return trace.ConnectionProblem(aerr, "%s", aerr.Error())
 	default:
 		return err
 	}

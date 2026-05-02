@@ -116,10 +116,18 @@ func (r BlockingFakeClock) BlockUntil(int) {
 	panic("Not implemented")
 }
 
+// AdvancingClock is a [clockwork.Clock] that tests can move forward with
+// [Advance] (either a [*clockwork.FakeClock] or [BlockingFakeClock] for
+// backends that cannot inject a fake clock).
+type AdvancingClock interface {
+	clockwork.Clock
+	Advance(d time.Duration)
+}
+
 // Constructor describes a function for constructing new instances of a
 // backend, with various options as required by a given test. Note that
 // it's the caller's responsibility to close it when the test is finished.
-type Constructor func(options ...ConstructionOption) (backend.Backend, *clockwork.FakeClock, error)
+type Constructor func(options ...ConstructionOption) (backend.Backend, AdvancingClock, error)
 
 // RunBackendComplianceSuite runs the entire backend compliance suite,
 // creating a collection of named subtests under the context provided

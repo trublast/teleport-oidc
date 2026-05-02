@@ -461,11 +461,13 @@ func mustRegisterKubeClusters(t *testing.T, ctx context.Context, authSrv *auth.S
 	require.NoError(t, wg.Wait())
 
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		servers, err := authSrv.GetKubernetesServers(ctx)
+		resources, err := authSrv.UnifiedResourceCache.GetUnifiedResources(ctx)
 		assert.NoError(c, err)
 		gotNames := map[string]struct{}{}
-		for _, ks := range servers {
-			gotNames[ks.GetName()] = struct{}{}
+		for _, resource := range resources {
+			if resource.GetKind() == types.KindKubeServer {
+				gotNames[resource.GetName()] = struct{}{}
+			}
 		}
 		for _, name := range wantNames {
 			assert.Contains(c, gotNames, name, "missing kube cluster")

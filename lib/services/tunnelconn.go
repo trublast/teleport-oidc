@@ -73,7 +73,7 @@ func UnmarshalTunnelConnection(data []byte, opts ...MarshalOption) (types.Tunnel
 		var r types.TunnelConnectionV2
 
 		if err := utils.FastUnmarshal(data, &r); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 
 		if err := r.CheckAndSetDefaults(); err != nil {

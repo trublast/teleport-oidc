@@ -157,7 +157,7 @@ func (s *FakeDeviceService) CreateDeviceEnrollToken(ctx context.Context, req *de
 
 	// Auto-enrollment path.
 	if err := validateCollectedData(req.DeviceData); err != nil {
-		return nil, trace.AccessDenied(err.Error())
+		return nil, trace.AccessDenied("%s", err.Error())
 	}
 
 	return &devicepb.DeviceEnrollToken{

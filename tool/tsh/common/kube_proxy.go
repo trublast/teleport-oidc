@@ -244,13 +244,13 @@ func (c *proxyKubeCommand) prepare(cf *CLIConf, tc *client.TeleportClient) (*cli
 	// In headless mode it's assumed user works on a remote machine where they don't have
 	// tsh credentials and can't login into Teleport Kubernetes clusters.
 	if cf.Headless {
-		return nil, nil, trace.BadParameter(errorMsg)
+		return nil, nil, trace.BadParameter("%s", errorMsg)
 	}
 
 	// Use logged-in clusters.
 	clusters := kubeconfig.LocalProxyClustersFromDefaultConfig(defaultConfig, tc.KubeClusterAddr())
 	if len(clusters) == 0 {
-		return nil, nil, trace.BadParameter(errorMsg)
+		return nil, nil, trace.BadParameter("%s", errorMsg)
 	}
 
 	c.printPrepare(cf, "Preparing the following Teleport Kubernetes clusters from the default kubeconfig:", clusters)
@@ -685,8 +685,8 @@ kubectl version
 var proxyKubeHeadlessTemplate = template.Must(template.New("").
 	Parse(fmt.Sprintf(`Started local proxy for Kubernetes Access in the background.
 
-%v Teleport will initiate a new shell configured with kubectl for local proxy access. 
-To conclude the session, simply use the "exit" command. Upon exiting, your original shell will be restored, 
+%v Teleport will initiate a new shell configured with kubectl for local proxy access.
+To conclude the session, simply use the "exit" command. Upon exiting, your original shell will be restored,
 the local proxy will be closed, and future access through this headless session won't be possible.
 
 {{ if .multipleContexts}} To work with different contexts use "kubectl --context", for example:

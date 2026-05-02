@@ -4498,6 +4498,7 @@ func (process *TeleportProcess) initProxyEndpoint(conn *Connector) error {
 	}
 
 	tlscfg := serverTLSConfig.Clone()
+	tlscfg.NextProtos = []string{string(alpncommon.ProtocolHTTP2), string(alpncommon.ProtocolProxySSHGRPC)}
 	tlscfg.ClientAuth = tls.RequireAndVerifyClientCert
 	if lib.IsInsecureDevMode() {
 		tlscfg.InsecureSkipVerify = true

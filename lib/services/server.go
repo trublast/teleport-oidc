@@ -346,7 +346,7 @@ func UnmarshalServer(bytes []byte, kind string, opts ...MarshalOption) (types.Se
 
 	var s types.ServerV2
 	if err := utils.FastUnmarshal(bytes, &s); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	s.Kind = kind
 	if err := s.CheckAndSetDefaults(); err != nil {

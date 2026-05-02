@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/netip"
 	"sync"
 	"time"
 
@@ -358,25 +359,42 @@ type JWTPROXYSigner interface {
 	SignPROXYJWT(p jwt.PROXYSignParams) (string, error)
 }
 
-func getTCPAddr(a net.Addr) net.TCPAddr {
+type tcpAddr struct {
+	net.TCPAddr
+	isIPv6 bool
+}
+
+func getTCPAddr(a net.Addr) tcpAddr {
 	if a == nil {
-		return net.TCPAddr{}
+		return tcpAddr{}
 	}
 
 	addr, ok := a.(*net.TCPAddr)
 	if ok { // Hot path
-		return *addr
+		return tcpAddr{
+			TCPAddr: *addr,
+			isIPv6:  addr.IP.To4() == nil,
+		}
 	}
 
 	parsedAddr := utils.FromAddr(a)
-	return net.TCPAddr{
-		IP:   net.ParseIP(parsedAddr.Host()),
-		Port: parsedAddr.Port(-1),
+	host := parsedAddr.Host()
+	return tcpAddr{
+		TCPAddr: net.TCPAddr{
+			IP:   net.ParseIP(host),
+			Port: parsedAddr.Port(-1),
+		},
+		isIPv6: isIPv6Host(host),
 	}
 }
 
-func isDifferentTCPVersion(addr1, addr2 net.TCPAddr) bool {
-	return (addr1.IP.To4() != nil && addr2.IP.To4() == nil) || (addr2.IP.To4() != nil && addr1.IP.To4() == nil)
+func isIPv6Host(host string) bool {
+	addr, err := netip.ParseAddr(host)
+	return err == nil && (addr.Is6() || addr.Is4In6())
+}
+
+func isDifferentTCPVersion(addr1, addr2 tcpAddr) bool {
+	return addr1.isIPv6 != addr2.isIPv6
 }
 
 func signPROXYHeader(sourceAddress, destinationAddress net.Addr, clusterName string, signingCert []byte, signer JWTPROXYSigner) ([]byte, error) {
@@ -400,13 +418,13 @@ func signPROXYHeader(sourceAddress, destinationAddress net.Addr, clusterName str
 	}
 
 	protocol := TCP4
-	if sAddr.IP.To4() == nil {
+	if sAddr.isIPv6 {
 		protocol = TCP6
 	}
 	pl := ProxyLine{
 		Protocol:    protocol,
-		Source:      sAddr,
-		Destination: dAddr,
+		Source:      sAddr.TCPAddr,
+		Destination: dAddr.TCPAddr,
 	}
 	err = pl.AddSignature([]byte(signature), signingCert)
 	if err != nil {

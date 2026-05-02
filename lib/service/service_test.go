@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -432,6 +433,17 @@ func TestServiceCheckPrincipals(t *testing.T) {
 // setup of true external loggers, but at the time of writing there isn't good
 // support for setting up fake external logging endpoints.
 func TestServiceInitExternalLog(t *testing.T) {
+	root := t.TempDir()
+	fileEventsNoHost := (&url.URL{
+		Scheme: "file",
+		Path:   filepath.ToSlash(filepath.Join(root, "no-host", "events")),
+	}).String()
+	fileEventsLocalhost := (&url.URL{
+		Scheme: "file",
+		Host:   "localhost",
+		Path:   filepath.ToSlash(filepath.Join(root, "localhost", "events")),
+	}).String()
+
 	tts := []struct {
 		events []string
 		isNil  bool
@@ -440,9 +452,9 @@ func TestServiceInitExternalLog(t *testing.T) {
 		// no URIs => no external logger
 		{isNil: true},
 		// local-only event uri w/o hostname => ok
-		{events: []string{"file:///tmp/teleport-test/events"}},
+		{events: []string{fileEventsNoHost}},
 		// local-only event uri w/ localhost => ok
-		{events: []string{"file://localhost/tmp/teleport-test/events"}},
+		{events: []string{fileEventsLocalhost}},
 		// invalid host parameter => rejected
 		{events: []string{"file://example.com/should/fail"}, isErr: true},
 		// missing path specifier => rejected
@@ -494,7 +506,10 @@ func TestAthenaAuditLogSetup(t *testing.T) {
 	})
 
 	sampleAthenaURI := "athena://db.table?topicArn=arn:aws:sns:eu-central-1:accnr:topicName&queryResultsS3=s3://testbucket/query-result/&workgroup=workgroup&locationS3=s3://testbucket/events-location&queueURL=https://sqs.eu-central-1.amazonaws.com/accnr/sqsname&largeEventsS3=s3://testbucket/largeevents"
-	sampleFileURI := "file:///tmp/teleport-test/events"
+	sampleFileURI := (&url.URL{
+		Scheme: "file",
+		Path:   filepath.ToSlash(filepath.Join(t.TempDir(), "athena-audit", "events")),
+	}).String()
 
 	backend, err := memory.New(memory.Config{})
 	require.NoError(t, err)

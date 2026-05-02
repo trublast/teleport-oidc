@@ -32,8 +32,10 @@ import (
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	kclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -182,6 +184,11 @@ func (s *TestSetup) StartKubernetesOperator(t *testing.T) {
 	k8sManager, err := ctrl.NewManager(s.K8sRestConfig, ctrl.Options{
 		Scheme:  scheme,
 		Metrics: metricsserver.Options{BindAddress: "0"},
+		Controller: ctrlconfig.Controller{
+			// Tests may stop the manager and start a new one with the same controllers
+			// in the same process.
+			SkipNameValidation: ptr.To(true),
+		},
 	})
 	require.NoError(t, err)
 

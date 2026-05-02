@@ -32,6 +32,7 @@ import (
 	"github.com/gravitational/teleport/api/types/events"
 	"github.com/gravitational/teleport/lib/defaults"
 	libevents "github.com/gravitational/teleport/lib/events"
+	"github.com/gravitational/teleport/lib/srv/db/clickhouse"
 	"github.com/gravitational/teleport/lib/srv/db/redis"
 )
 
@@ -313,12 +314,11 @@ func TestAuditClickHouseHTTP(t *testing.T) {
 		})
 
 		requireEvent(t, testCtx, libevents.DatabaseSessionStartCode)
-		// Select timezone.
 		event := waitForEvent(t, testCtx, libevents.DatabaseSessionQueryCode)
-		assertDatabaseQueryFromAuditEvent(t, event, "SELECT timezone()")
+		assertDatabaseQueryFromAuditEvent(t, event, clickhouse.HelloQuery)
 
 		event = waitForEvent(t, testCtx, libevents.DatabaseSessionQueryCode)
-		assertDatabaseQueryFromAuditEvent(t, event, "SELECT 1")
+		assertDatabaseQueryFromAuditEvent(t, event, clickhouse.PingQuery)
 
 		require.NoError(t, conn.Close())
 		requireEvent(t, testCtx, libevents.DatabaseSessionEndCode)

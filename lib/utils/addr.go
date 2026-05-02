@@ -161,6 +161,44 @@ func ParseAddrs(addrs []string) (result []NetAddr, err error) {
 	return result, nil
 }
 
+// parseTCPAddrURIFallback handles tcp addresses that net/url rejects, notably
+// IPv4-mapped IPv6 literals without brackets (e.g. ::ffff:203.0.113.1:443).
+func parseTCPAddrURIFallback(lookup string) (*NetAddr, bool) {
+	if len(lookup) < 6 || !strings.EqualFold(lookup[:6], "tcp://") {
+		return nil, false
+	}
+	body := lookup[6:]
+	if idx := strings.IndexByte(body, '/'); idx >= 0 {
+		body = body[:idx]
+	}
+	if body == "" {
+		return nil, false
+	}
+	host, port, err := splitHostPortAtLastNumericPort(body)
+	if err != nil {
+		return nil, false
+	}
+	return &NetAddr{Addr: net.JoinHostPort(host, port), AddrNetwork: "tcp"}, true
+}
+
+func splitHostPortAtLastNumericPort(s string) (host, port string, err error) {
+	i := strings.LastIndexByte(s, ':')
+	if i <= 0 || i == len(s)-1 {
+		return "", "", trace.BadParameter("missing port")
+	}
+	port = s[i+1:]
+	for _, c := range port {
+		if c < '0' || c > '9' {
+			return "", "", trace.BadParameter("port is not numeric")
+		}
+	}
+	host = s[:i]
+	if host == "" {
+		return "", "", trace.BadParameter("empty host")
+	}
+	return host, port, nil
+}
+
 // ParseAddr takes strings like "tcp://host:port/path" and returns
 // *NetAddr or an error
 func ParseAddr(a string) (*NetAddr, error) {
@@ -172,6 +210,9 @@ func ParseAddr(a string) (*NetAddr, error) {
 	}
 	u, err := url.Parse(a)
 	if err != nil {
+		if na, ok := parseTCPAddrURIFallback(a); ok {
+			return na, nil
+		}
 		return nil, trace.BadParameter("failed to parse %q: %v", a, err)
 	}
 	switch u.Scheme {

@@ -830,7 +830,7 @@ func checkIfCertsAreAllowedToAccessCluster(k *client.Key, rootCluster, teleportC
 	}
 	errMsg := "Your user's Teleport role does not allow Kubernetes access." +
 		" Please ask cluster administrator to ensure your role has appropriate kubernetes_groups and kubernetes_users set."
-	return trace.AccessDenied(errMsg)
+	return trace.AccessDenied("%s", errMsg)
 }
 
 // checkIfCertHasKubeGroupsAndUsers checks if the certificate has Kubernetes groups or users
@@ -1258,7 +1258,7 @@ func (c *kubeLoginCommand) run(cf *CLIConf) error {
 			if trace.IsNotFound(err) {
 				// rewrap not found errors as access denied, so we can retry
 				// fetching clusters with an access request.
-				return trace.AccessDenied(err.Error())
+				return trace.AccessDenied("%s", err.Error())
 			}
 			return trace.Wrap(err)
 		}
@@ -1336,10 +1336,10 @@ func checkClusterSelection(cf *CLIConf, clusters types.KubeClusters, name string
 		query:  cf.PredicateExpression,
 	}
 	if len(clusters) == 0 {
-		return trace.NotFound(formatKubeNotFound(cf.SiteName, selectors))
+		return trace.NotFound("%s", formatKubeNotFound(cf.SiteName, selectors))
 	}
 	errMsg := formatAmbiguousKubeCluster(cf, selectors, clusters)
-	return trace.BadParameter(errMsg)
+	return trace.BadParameter("%s", errMsg)
 }
 
 func (c *kubeLoginCommand) getSelectors() resourceSelectors {

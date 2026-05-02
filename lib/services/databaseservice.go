@@ -81,7 +81,7 @@ func UnmarshalDatabaseService(data []byte, opts ...MarshalOption) (types.Databas
 	case types.V1:
 		var s types.DatabaseServiceV1
 		if err := utils.FastUnmarshal(data, &s); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 		if err := s.CheckAndSetDefaults(); err != nil {
 			return nil, trace.Wrap(err)

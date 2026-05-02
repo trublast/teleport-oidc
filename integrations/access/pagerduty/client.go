@@ -136,9 +136,9 @@ func onAfterPagerDutyResponse(sink common.StatusSink) resty.ResponseMiddleware {
 			}
 
 			if status.GetCode() == types.PluginStatusCode_UNAUTHORIZED {
-				return trace.AccessDenied(details)
+				return trace.AccessDenied("%s", details)
 			}
-			return trace.Errorf(details)
+			return trace.Errorf("%s", details)
 		}
 		return nil
 	}

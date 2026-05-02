@@ -1028,7 +1028,7 @@ func (process *TeleportProcess) rotate(conn *Connector, localState state.StateV2
 			}
 			return &rotationStatus{needsReload: true}, nil
 		default:
-			return nil, trace.BadParameter("unsupported state: %q", localState)
+			return nil, trace.BadParameter("unsupported local rotation state: %v", local.State)
 		}
 	case types.RotationStateInProgress:
 		switch remote.Phase {

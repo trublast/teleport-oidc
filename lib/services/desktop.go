@@ -86,7 +86,7 @@ func UnmarshalWindowsDesktop(data []byte, opts ...MarshalOption) (types.WindowsD
 	case types.V3:
 		var s types.WindowsDesktopV3
 		if err := utils.FastUnmarshal(data, &s); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 		if err := s.CheckAndSetDefaults(); err != nil {
 			return nil, trace.Wrap(err)
@@ -149,7 +149,7 @@ func UnmarshalWindowsDesktopService(data []byte, opts ...MarshalOption) (types.W
 	case types.V3:
 		var s types.WindowsDesktopServiceV3
 		if err := utils.FastUnmarshal(data, &s); err != nil {
-			return nil, trace.BadParameter(err.Error())
+			return nil, trace.BadParameter("%s", err.Error())
 		}
 		if err := s.CheckAndSetDefaults(); err != nil {
 			return nil, trace.Wrap(err)

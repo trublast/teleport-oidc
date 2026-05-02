@@ -94,7 +94,7 @@ func (p *ProcessStorage) GetState(ctx context.Context, role types.SystemRole) (*
 	}
 	var res state.StateV2
 	if err := utils.FastUnmarshal(item.Value, &res); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 
 	// an empty InitialLocalVersion is treated as an error by CheckAndSetDefaults, but if the field
@@ -162,7 +162,7 @@ func (p *ProcessStorage) ReadIdentity(name string, role types.SystemRole) (*stat
 	}
 	var res state.IdentityV2
 	if err := utils.FastUnmarshal(item.Value, &res); err != nil {
-		return nil, trace.BadParameter(err.Error())
+		return nil, trace.BadParameter("%s", err.Error())
 	}
 	if err := res.CheckAndSetDefaults(); err != nil {
 		return nil, trace.Wrap(err)

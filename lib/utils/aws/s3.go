@@ -38,7 +38,7 @@ func ConvertS3Error(err error, args ...interface{}) error {
 
 	// SDK v1 errors:
 	if rerr, ok := err.(awserr.RequestFailure); ok && rerr.StatusCode() == http.StatusForbidden {
-		return trace.AccessDenied(rerr.Message())
+		return trace.AccessDenied("%s", rerr.Message())
 	}
 
 	if aerr, ok := err.(awserr.Error); ok {

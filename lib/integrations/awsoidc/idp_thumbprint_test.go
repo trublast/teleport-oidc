@@ -18,6 +18,8 @@ package awsoidc
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"net/http/httptest"
 	"testing"
 
@@ -38,10 +40,8 @@ func TestThumbprint(t *testing.T) {
 	thumbprint, err := ThumbprintIdP(ctx, tlsServer.URL)
 	require.NoError(t, err)
 
-	// The Proxy is started using httptest.NewTLSServer, which uses a hard-coded cert
-	// located at go/src/net/http/internal/testcert/testcert.go
-	// The following value is the sha1 fingerprint of that certificate.
-	expectedThumbprint := "15dbd260c7465ecca6de2c0b2181187f66ee0d1a"
+	serverCertificateSHA1 := sha1.Sum(tlsServer.Certificate().Raw)
+	expectedThumbprint := hex.EncodeToString(serverCertificateSHA1[:])
 
 	require.Equal(t, expectedThumbprint, thumbprint)
 }

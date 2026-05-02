@@ -194,6 +194,16 @@ func TestIsValidRegion(t *testing.T) {
 			errCheck: require.NoError,
 		},
 		{
+			name:     "eu isoe",
+			region:   "eu-isoe-west-1",
+			errCheck: require.NoError,
+		},
+		{
+			name:     "eusc",
+			region:   "eusc-de-east-1",
+			errCheck: require.NoError,
+		},
+		{
 			name:     "valid format",
 			region:   "xx-iso-somewhere-100",
 			errCheck: require.NoError,

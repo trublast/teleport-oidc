@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestLite(t *testing.T) {
-	newBackend := func(options ...test.ConstructionOption) (backend.Backend, *clockwork.FakeClock, error) {
+	newBackend := func(options ...test.ConstructionOption) (backend.Backend, test.AdvancingClock, error) {
 		clock := clockwork.NewFakeClock()
 
 		cfg, err := test.ApplyOptions(options)
