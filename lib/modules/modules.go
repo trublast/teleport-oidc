@@ -356,14 +356,15 @@ func (p *defaultModules) Features() Features {
 	})
 
 	return Features{
-		Kubernetes:        true,
-		DB:                true,
-		App:               true,
-		Desktop:           true,
-		OIDC:              true,
-		SAML:              true,
-		AutomaticUpgrades: p.automaticUpgrades,
-		Assist:            true,
+		Kubernetes:              true,
+		DB:                      true,
+		App:                     true,
+		Desktop:                 true,
+		OIDC:                    true,
+		SAML:                    true,
+		AdvancedAccessWorkflows: true,
+		AutomaticUpgrades:       p.automaticUpgrades,
+		Assist:                  true,
 	}
 }
 

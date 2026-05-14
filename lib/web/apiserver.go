@@ -744,6 +744,12 @@ func (h *Handler) bindDefaultEndpoints() {
 	h.PUT("/webapi/sites/:site/locks", h.WithClusterAuth(h.createClusterLock))
 	h.DELETE("/webapi/sites/:site/locks/:uuid", h.WithClusterAuth(h.deleteClusterLock))
 
+	// access requests
+	h.GET("/webapi/sites/:site/accessrequests", h.WithClusterAuth(h.getAccessRequests))
+	h.POST("/webapi/sites/:site/accessrequests", h.WithClusterAuth(h.createAccessRequest))
+	h.POST("/webapi/sites/:site/accessrequests/:id/review", h.WithClusterAuth(h.reviewAccessRequest))
+	h.DELETE("/webapi/sites/:site/accessrequests/:id", h.WithClusterAuth(h.deleteAccessRequest))
+
 	// active sessions handlers
 	// Deprecated: The connect/ws variant should be used instead.
 	// TODO(lxea): DELETE in v16
