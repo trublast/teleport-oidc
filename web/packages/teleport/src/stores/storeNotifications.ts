@@ -19,6 +19,8 @@ import { assertUnreachable } from 'shared/utils/assertUnreachable';
 
 export enum NotificationKind {
   AccessList = 'access-list',
+  AccessRequestPending = 'access-request-pending',
+  AccessRequestApproved = 'access-request-approved',
 }
 
 type AccessListNotification = {
@@ -27,8 +29,33 @@ type AccessListNotification = {
   route: string;
 };
 
+type AccessRequestPendingNotification = {
+  kind: NotificationKind.AccessRequestPending;
+  // requestId of the pending access request awaiting review.
+  requestId: string;
+  // user who created the access request.
+  requestor: string;
+  // roles requested by the access request.
+  roles: string[];
+  // route to the access requests page.
+  route: string;
+};
+
+type AccessRequestApprovedNotification = {
+  kind: NotificationKind.AccessRequestApproved;
+  // requestId of the approved request the current user can assume.
+  requestId: string;
+  // roles granted by the request.
+  roles: string[];
+  // route to the access requests page.
+  route: string;
+};
+
 export type Notification = {
-  item: AccessListNotification;
+  item:
+    | AccessListNotification
+    | AccessRequestPendingNotification
+    | AccessRequestApprovedNotification;
   id: string;
   date: Date;
 };
@@ -63,11 +90,14 @@ export class StoreNotifications extends Store<NotificationState> {
   updateNotificationsByKind(notices: Notification[], kind: NotificationKind) {
     switch (kind) {
       case NotificationKind.AccessList:
+      case NotificationKind.AccessRequestPending:
+      case NotificationKind.AccessRequestApproved: {
         const filtered = this.state.notifications.filter(
-          n => n.item.kind !== NotificationKind.AccessList
+          n => n.item.kind !== kind
         );
         this.setNotifications([...filtered, ...notices]);
         return;
+      }
       default:
         assertUnreachable(kind);
     }
@@ -76,9 +106,9 @@ export class StoreNotifications extends Store<NotificationState> {
   hasNotificationsByKind(kind: NotificationKind) {
     switch (kind) {
       case NotificationKind.AccessList:
-        return this.getNotifications().some(
-          n => n.item.kind === NotificationKind.AccessList
-        );
+      case NotificationKind.AccessRequestPending:
+      case NotificationKind.AccessRequestApproved:
+        return this.getNotifications().some(n => n.item.kind === kind);
       default:
         assertUnreachable(kind);
     }

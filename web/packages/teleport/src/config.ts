@@ -314,8 +314,10 @@ const cfg = {
     userPreferencesPath: '/v1/webapi/user/preferences',
     userClusterPreferencesPath: '/v1/webapi/user/preferences/:clusterId',
 
-    // Assist needs some access request info to exist in OSS
-    accessRequestPath: '/v1/enterprise/accessrequest/:requestId?',
+    // Access requests are served by the OSS proxy under /webapi/sites.
+    // The optional `:requestId?` segment is used for per-request operations
+    // such as review (`.../:requestId/review`) and delete.
+    accessRequestPath: '/v1/webapi/sites/:clusterId/accessrequests/:requestId?',
 
     accessGraphFeatures: '/v1/enterprise/accessgraph/static/features.json',
   },
@@ -928,8 +930,11 @@ const cfg = {
     return generatePath(cfg.routes.assist, { conversationId });
   },
 
-  getAccessRequestUrl(requestId?: string) {
-    return generatePath(cfg.api.accessRequestPath, { requestId });
+  getAccessRequestUrl(requestId?: string, clusterId?: string) {
+    return generatePath(cfg.api.accessRequestPath, {
+      clusterId: clusterId || cfg.proxyCluster,
+      requestId,
+    });
   },
 
   getAccessRequestRoute(requestId?: string) {

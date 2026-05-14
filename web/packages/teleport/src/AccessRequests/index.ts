@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export { LockedAccessRequests as default } from './LockedAccessRequests/LockedAccessRequests';
+export { AccessRequestsList as default } from './AccessRequestsList/AccessRequestsList';

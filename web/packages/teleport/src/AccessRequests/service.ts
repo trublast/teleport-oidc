@@ -27,13 +27,58 @@ import {
 } from 'teleport/AccessRequests/types';
 import { middleValues } from 'teleport/AccessRequests/utils';
 
+function makeAccessRequest(raw: any): AccessRequest {
+  return {
+    id: raw.id,
+    created: new Date(raw.created),
+    expires: new Date(raw.expires),
+    maxDuration: raw.maxDuration ? new Date(raw.maxDuration) : undefined,
+    sessionTTL: raw.sessionTTL ? new Date(raw.sessionTTL) : undefined,
+    requestReason: raw.requestReason || '',
+    resolveReason: raw.resolveReason || '',
+    resources: raw.resources || [],
+    reviews: raw.reviews || [],
+    roles: raw.roles || [],
+    state: raw.state || 'PENDING',
+    suggestedReviewers: raw.suggestedReviewers || [],
+    thresholdNames: raw.thresholdNames || [],
+    user: raw.user || '',
+  };
+}
+
+export async function fetchAccessRequests(): Promise<AccessRequest[]> {
+  const items = await api.get(cfg.getAccessRequestUrl());
+  if (Array.isArray(items)) {
+    return items.map(makeAccessRequest);
+  }
+  return [];
+}
+
+export async function reviewAccessRequest(
+  requestId: string,
+  state: 'APPROVED' | 'DENIED',
+  reason: string
+): Promise<AccessRequest> {
+  const resp = await api.post(`${cfg.getAccessRequestUrl(requestId)}/review`, {
+    state,
+    reason,
+  });
+  return makeAccessRequest(resp);
+}
+
+export async function deleteAccessRequest(requestId: string): Promise<void> {
+  await api.delete(cfg.getAccessRequestUrl(requestId));
+}
+
 export async function createAccessRequest(
   clusterId: string,
   roles: string[],
   resources: AccessRequestResource[],
   reason: string,
   dryRun: boolean,
-  maxDuration?: Date
+  maxDuration?: Date,
+  assumeStartTime?: Date,
+  suggestedReviewers: string[] = []
 ): Promise<AccessRequest> {
   const request: CreateAccessRequest = {
     reason,
@@ -43,27 +88,14 @@ export async function createAccessRequest(
       name: item.id,
       clusterName: clusterId,
     })),
-    suggestedReviewers: [],
+    suggestedReviewers,
     maxDuration,
+    assumeStartTime,
     dryRun,
   };
 
-  const accessRequest = await api.post(cfg.getAccessRequestUrl(), request);
-
-  return {
-    id: accessRequest.id,
-    created: new Date(accessRequest.created),
-    expires: new Date(accessRequest.expires),
-    requestReason: accessRequest.requestReason,
-    resolveReason: accessRequest.resolveReason,
-    resources: accessRequest.resources,
-    reviews: accessRequest.reviews,
-    roles: accessRequest.roles,
-    state: accessRequest.state,
-    suggestedReviewers: accessRequest.suggestedReviewers,
-    thresholdNames: accessRequest.thresholdNames,
-    user: accessRequest.user,
-  };
+  const raw = await api.post(cfg.getAccessRequestUrl(), request);
+  return makeAccessRequest(raw);
 }
 
 export async function getDurationOptions(

@@ -72,7 +72,7 @@ const NewLock = lazy(() => import('./LocksV2/NewLock'));
 const Databases = lazy(() => import('./Databases'));
 const Desktops = lazy(() => import('./Desktops'));
 const Discover = lazy(() => import('./Discover'));
-const LockedAccessRequests = lazy(() => import('./AccessRequests'));
+const AccessRequestsPage = lazy(() => import('./AccessRequests'));
 const Integrations = lazy(() => import('./Integrations'));
 const IntegrationEnroll = lazy(
   () => import('@gravitational/teleport/src/Integrations/Enroll')
@@ -89,7 +89,7 @@ class AccessRequests implements TeleportFeature {
     title: 'Access Requests',
     path: cfg.routes.accessRequest,
     exact: true,
-    component: LockedAccessRequests,
+    component: AccessRequestsPage,
   };
 
   hasAccess() {

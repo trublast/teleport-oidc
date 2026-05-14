@@ -65,5 +65,6 @@ export interface CreateAccessRequest {
   resourceIds?: ResourceId[];
   suggestedReviewers?: string[];
   maxDuration?: Date;
+  assumeStartTime?: Date;
   dryRun?: boolean;
 }
