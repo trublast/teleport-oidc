@@ -33,7 +33,6 @@ test('all participant modes are properly listed and in the correct order', () =>
         clusterId={'test-cluster'}
         participantModes={['moderator', 'peer', 'observer']}
         showCTA={false}
-        showModeratedCTA={false}
       />
     </ContextProvider>
   );
@@ -81,7 +80,6 @@ test('showCTA does not render a join link for any sessions', () => {
         clusterId={'test-cluster'}
         participantModes={['moderator', 'peer', 'observer']}
         showCTA={true}
-        showModeratedCTA={false}
       />
     </ContextProvider>
   );
@@ -100,7 +98,7 @@ test('showCTA does not render a join link for any sessions', () => {
   ).toBeInTheDocument();
 });
 
-test('showModeratedCTA does not render a join link for moderated sessions', () => {
+test('renders a join link for moderated sessions', () => {
   const ctx = createTeleportContext();
   render(
     <ContextProvider ctx={ctx}>
@@ -109,7 +107,6 @@ test('showModeratedCTA does not render a join link for moderated sessions', () =
         clusterId={'test-cluster'}
         participantModes={['moderator', 'peer', 'observer']}
         showCTA={false}
-        showModeratedCTA={true}
       />
     </ContextProvider>
   );
@@ -123,13 +120,16 @@ test('showModeratedCTA does not render a join link for moderated sessions', () =
     'href',
     '/web/cluster/test-cluster/console/session/4b038eda-ddca-5533-9a49-3a34f133b5f4?mode=observer'
   );
-  expect(screen.queryByText('As a Moderator').closest('a')).toBeNull();
+  expect(screen.queryByText('As a Moderator').closest('a')).toHaveAttribute(
+    'href',
+    '/web/cluster/test-cluster/console/session/4b038eda-ddca-5533-9a49-3a34f133b5f4?mode=moderator'
+  );
   expect(screen.queryByText('As a Peer').closest('a')).toHaveAttribute(
     'href',
     '/web/cluster/test-cluster/console/session/4b038eda-ddca-5533-9a49-3a34f133b5f4?mode=peer'
   );
 
   expect(
-    screen.getByText('Join as a moderator with Teleport Enterprise')
-  ).toBeInTheDocument();
+    screen.queryByText('Join as a moderator with Teleport Enterprise')
+  ).not.toBeInTheDocument();
 });

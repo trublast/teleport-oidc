@@ -42,8 +42,7 @@ export default function Container() {
 }
 
 export function Sessions(props: ReturnType<typeof useSessions>) {
-  const { attempt, sessions, showActiveSessionsCTA, showModeratedSessionsCTA } =
-    props;
+  const { attempt, sessions, showActiveSessionsCTA } = props;
   return (
     <FeatureBox>
       <FeatureHeader
@@ -82,7 +81,6 @@ export function Sessions(props: ReturnType<typeof useSessions>) {
         <SessionList
           sessions={sessions}
           showActiveSessionsCTA={showActiveSessionsCTA}
-          showModeratedSessionsCTA={showModeratedSessionsCTA}
         />
       )}
     </FeatureBox>

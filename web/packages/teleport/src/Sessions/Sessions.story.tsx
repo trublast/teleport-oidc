@@ -51,19 +51,6 @@ export function ActiveSessionsCTA() {
   );
 }
 
-export function ModeratedSessionsCTA() {
-  const props = makeSessionProps({
-    attempt: { isSuccess: true },
-    showModeratedSessionsCTA: true,
-  });
-
-  return (
-    <ContextProvider ctx={ctx}>
-      <Sessions {...props} />
-    </ContextProvider>
-  );
-}
-
 const ctx = createTeleportContext();
 
 const makeSessionProps = (
@@ -79,7 +66,6 @@ const makeSessionProps = (
         message: '',
       },
       showActiveSessionsCTA: false,
-      showModeratedSessionsCTA: false,
     },
     overrides
   );

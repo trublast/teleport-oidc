@@ -29,13 +29,11 @@ export const SessionJoinBtn = ({
   clusterId,
   participantModes,
   showCTA,
-  showModeratedCTA,
 }: {
   sid: string;
   clusterId: string;
   participantModes: ParticipantMode[];
   showCTA: boolean;
-  showModeratedCTA: boolean;
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement>(null);
 
@@ -73,7 +71,7 @@ export const SessionJoinBtn = ({
         hasAccess={participantModes.includes('moderator')}
         participantMode="moderator"
         key="moderator"
-        showCTA={showCTA || showModeratedCTA}
+        showCTA={showCTA}
         closeMenu={closeMenu}
       />
       <JoinMenuItem
@@ -86,17 +84,6 @@ export const SessionJoinBtn = ({
         showCTA={showCTA}
         closeMenu={closeMenu}
       />
-      {showModeratedCTA && (
-        <ButtonLockedFeature
-          noIcon
-          height="40px"
-          event={CtaEvent.CTA_ACTIVE_SESSIONS}
-          m={3}
-          width="90%"
-        >
-          Join as a moderator with Teleport Enterprise
-        </ButtonLockedFeature>
-      )}
     </JoinMenu>
   );
 };
