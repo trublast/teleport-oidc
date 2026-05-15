@@ -1688,3 +1688,143 @@ func createAccessRequestWithStartTime(t *testing.T) accessRequestWithStartTime {
 		createdRequest:                createdReq,
 	}
 }
+
+func TestCheckRoleFeatureSupport_AllowsSearchAsRoles(t *testing.T) {
+	modules.SetTestModules(t, &modules.TestModules{
+		TestFeatures: modules.Features{
+			AdvancedAccessWorkflows: true,
+		},
+	})
+
+	t.Run("search_as_roles allowed", func(t *testing.T) {
+		role, err := types.NewRole("requester", types.RoleSpecV6{
+			Allow: types.RoleConditions{
+				Request: &types.AccessRequestConditions{
+					SearchAsRoles: []string{"access"},
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NoError(t, checkRoleFeatureSupport(role))
+	})
+
+	t.Run("review_requests allowed when AdvancedAccessWorkflows is set", func(t *testing.T) {
+		role, err := types.NewRole("reviewer", types.RoleSpecV6{
+			Allow: types.RoleConditions{
+				ReviewRequests: &types.AccessReviewConditions{
+					Roles:          []string{"access"},
+					PreviewAsRoles: []string{"access"},
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NoError(t, checkRoleFeatureSupport(role))
+	})
+
+	t.Run("pin_source_ip still rejected", func(t *testing.T) {
+		role, err := types.NewRole("pinned", types.RoleSpecV6{
+			Options: types.RoleOptions{
+				PinSourceIP: true,
+			},
+		})
+		require.NoError(t, err)
+		err = checkRoleFeatureSupport(role)
+		require.Error(t, err)
+		require.True(t, trace.IsAccessDenied(err), "want access denied, got %v", err)
+	})
+}
+
+// TestResourceAccessRequest verifies that Resource Access Requests work
+// end-to-end on non-enterprise builds: a requester with `search_as_roles` can
+// create a request scoped to specific resources, a reviewer with
+// `review_requests` can approve it, and the issued certs grant access only to
+// the approved resource IDs.
+func TestResourceAccessRequest(t *testing.T) {
+	modules.SetTestModules(t, &modules.TestModules{
+		TestFeatures: modules.Features{
+			AdvancedAccessWorkflows: true,
+		},
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	testPack := newAccessRequestTestPack(ctx, t)
+
+	const (
+		requesterName = "responder"
+		reviewerName  = "admin"
+		requestNode   = "staging"
+	)
+	expectRoles := []string{"responders", "admins"}
+	expectNodes := []string{requestNode}
+
+	requesterClient, err := testPack.tlsServer.NewClient(TestUser(requesterName))
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, requesterClient.Close()) })
+
+	// Without an approved request the user should not see any nodes.
+	nodes, err := requesterClient.GetNodes(ctx, defaults.Namespace)
+	require.NoError(t, err)
+	require.Empty(t, nodes)
+
+	// Capabilities should advertise the role(s) that grant access to the
+	// requested resource via `search_as_roles`.
+	requestResourceIDs := []types.ResourceID{{
+		ClusterName: testPack.clusterName,
+		Kind:        types.KindNode,
+		Name:        requestNode,
+	}}
+	caps, err := requesterClient.GetAccessCapabilities(ctx, types.AccessCapabilitiesRequest{
+		ResourceIDs: requestResourceIDs,
+	})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{"admins"}, caps.ApplicableRolesForResources)
+
+	// Create the resource-scoped access request.
+	req, err := services.NewAccessRequestWithResources(requesterName, nil, requestResourceIDs)
+	require.NoError(t, err)
+	req, err = requesterClient.CreateAccessRequestV2(ctx, req)
+	require.NoError(t, err)
+
+	// Approve via review (uses `allow.review_requests`, not full
+	// `access_request` update permission).
+	reviewerClient, err := testPack.tlsServer.NewClient(TestUser(reviewerName))
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, reviewerClient.Close()) })
+
+	req, err = reviewerClient.SubmitAccessReview(ctx, types.AccessReviewSubmission{
+		RequestID: req.GetName(),
+		Review: types.AccessReview{
+			ProposedState: types.RequestState_APPROVED,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, types.RequestState_APPROVED, req.GetState())
+
+	// Issue certs that assume the approved request.
+	certs, err := requesterClient.GenerateUserCerts(ctx, proto.UserCertsRequest{
+		PublicKey:      testPack.pubKey,
+		Username:       requesterName,
+		Expires:        time.Now().Add(time.Hour).UTC(),
+		Format:         constants.CertificateFormatStandard,
+		AccessRequests: []string{req.GetName()},
+	})
+	require.NoError(t, err)
+
+	checkCerts(t, certs, expectRoles, []string{"root"}, []string{req.GetName()}, requestResourceIDs)
+
+	// The elevated client should be able to see only the requested node.
+	elevatedCert, err := tls.X509KeyPair(certs.TLS, testPack.privKey)
+	require.NoError(t, err)
+	elevatedClient := testPack.tlsServer.NewClientWithCert(elevatedCert)
+
+	elevatedNodes, err := elevatedClient.GetNodes(ctx, defaults.Namespace)
+	require.NoError(t, err)
+	gotNodes := make([]string, 0, len(elevatedNodes))
+	for _, node := range elevatedNodes {
+		gotNodes = append(gotNodes, node.GetName())
+	}
+	sort.Strings(gotNodes)
+	require.Equal(t, expectNodes, gotNodes)
+}

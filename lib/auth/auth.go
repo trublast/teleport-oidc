@@ -2518,9 +2518,9 @@ func generateCert(ctx context.Context, a *Server, req certRequest, caType types.
 		return nil, trace.Wrap(err)
 	}
 
-	if len(req.checker.GetAllowedResourceIDs()) > 0 && modules.GetModules().BuildType() != modules.BuildEnterprise {
-		return nil, fmt.Errorf("Resource Access Requests: %w", ErrRequiresEnterprise)
-	}
+	// if len(req.checker.GetAllowedResourceIDs()) > 0 && modules.GetModules().BuildType() != modules.BuildEnterprise {
+	// 	return nil, fmt.Errorf("Resource Access Requests: %w", ErrRequiresEnterprise)
+	// }
 
 	// Reject the cert request if there is a matching lock in force.
 	authPref, err := a.GetAuthPreference(ctx)
