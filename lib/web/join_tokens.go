@@ -36,6 +36,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"k8s.io/apimachinery/pkg/util/validation"
 
+	"github.com/gravitational/teleport"
 	"github.com/gravitational/teleport/api/client/proto"
 	"github.com/gravitational/teleport/api/types"
 	apiutils "github.com/gravitational/teleport/api/utils"
@@ -484,6 +485,8 @@ func getJoinScript(ctx context.Context, settings scriptSettings, m nodeAPIGetter
 		version = strings.TrimPrefix(settings.automaticUpgradesVersion, "v")
 	}
 
+	cdnBaseURL := teleport.CDNBaseURL()
+
 	// This section relies on Go's default zero values to make sure that the settings
 	// are correct when not installing an app.
 	err = scripts.InstallNodeBashScript.Execute(&buf, map[string]interface{}{
@@ -510,6 +513,7 @@ func getJoinScript(ctx context.Context, settings scriptSettings, m nodeAPIGetter
 		"db_service_resource_labels": dbServiceResourceLabels,
 		"discoveryInstallMode":       settings.discoveryInstallMode,
 		"discoveryGroup":             utils.UnixShellQuote(settings.discoveryGroup),
+		"cdnBaseURL":                 utils.UnixShellQuote(cdnBaseURL),
 	})
 	if err != nil {
 		return "", trace.Wrap(err)

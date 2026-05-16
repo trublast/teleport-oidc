@@ -970,18 +970,25 @@ func TestJoinScript(t *testing.T) {
 	}
 
 	t.Run("direct download links", func(t *testing.T) {
-		getGravitationalTeleportLinkRegex := regexp.MustCompile(`https://cdn\.teleport\.dev/\${TELEPORT_PACKAGE_NAME}[-_]v?\${TELEPORT_VERSION}`)
+		// Direct-download URLs in install.sh reference the CDN via the
+		// $TELEPORT_CDN_BASE_URL shell variable so that operators can override
+		// it for air-gapped / mirrored installs.
+		getGravitationalTeleportLinkRegex := regexp.MustCompile(`\$TELEPORT_CDN_BASE_URL/\${TELEPORT_PACKAGE_NAME}[-_]v?\${TELEPORT_VERSION}`)
 
 		t.Run("oss", func(t *testing.T) {
 			// Using the OSS Version, all the links must contain only teleport as package name.
 			script, err := getJoinScript(context.Background(), scriptSettings{token: validToken}, m)
 			require.NoError(t, err)
 
+			// The CDN base URL must be wired up correctly. A regression in the
+			// template (e.g. wrong field name) would render '<no value>' here.
+			require.Contains(t, script, "TELEPORT_CDN_BASE_URL='https://cdn.teleport.dev'")
+
 			matches := getGravitationalTeleportLinkRegex.FindAllString(script, -1)
 			require.ElementsMatch(t, matches, []string{
-				"https://cdn.teleport.dev/${TELEPORT_PACKAGE_NAME}-v${TELEPORT_VERSION}",
-				"https://cdn.teleport.dev/${TELEPORT_PACKAGE_NAME}_${TELEPORT_VERSION}",
-				"https://cdn.teleport.dev/${TELEPORT_PACKAGE_NAME}-${TELEPORT_VERSION}",
+				"$TELEPORT_CDN_BASE_URL/${TELEPORT_PACKAGE_NAME}-v${TELEPORT_VERSION}",
+				"$TELEPORT_CDN_BASE_URL/${TELEPORT_PACKAGE_NAME}_${TELEPORT_VERSION}",
+				"$TELEPORT_CDN_BASE_URL/${TELEPORT_PACKAGE_NAME}-${TELEPORT_VERSION}",
 			})
 			require.Contains(t, script, "TELEPORT_PACKAGE_NAME='teleport'")
 			require.Contains(t, script, "TELEPORT_ARCHIVE_PATH='teleport'")
@@ -993,11 +1000,13 @@ func TestJoinScript(t *testing.T) {
 			script, err := getJoinScript(context.Background(), scriptSettings{token: validToken}, m)
 			require.NoError(t, err)
 
+			require.Contains(t, script, "TELEPORT_CDN_BASE_URL='https://cdn.teleport.dev'")
+
 			matches := getGravitationalTeleportLinkRegex.FindAllString(script, -1)
 			require.ElementsMatch(t, matches, []string{
-				"https://cdn.teleport.dev/${TELEPORT_PACKAGE_NAME}-v${TELEPORT_VERSION}",
-				"https://cdn.teleport.dev/${TELEPORT_PACKAGE_NAME}_${TELEPORT_VERSION}",
-				"https://cdn.teleport.dev/${TELEPORT_PACKAGE_NAME}-${TELEPORT_VERSION}",
+				"$TELEPORT_CDN_BASE_URL/${TELEPORT_PACKAGE_NAME}-v${TELEPORT_VERSION}",
+				"$TELEPORT_CDN_BASE_URL/${TELEPORT_PACKAGE_NAME}_${TELEPORT_VERSION}",
+				"$TELEPORT_CDN_BASE_URL/${TELEPORT_PACKAGE_NAME}-${TELEPORT_VERSION}",
 			})
 			require.Contains(t, script, "TELEPORT_PACKAGE_NAME='teleport-ent'")
 			require.Contains(t, script, "TELEPORT_ARCHIVE_PATH='teleport-ent'")

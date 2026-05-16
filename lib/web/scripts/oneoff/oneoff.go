@@ -30,10 +30,6 @@ import (
 )
 
 const (
-	// teleportCDNLocation is the Teleport's CDN URL
-	// This is used to download the Teleport Binary
-	teleportCDNLocation = "https://cdn.teleport.dev"
-
 	// binUname is the default binary name for inspecting the host's OS.
 	binUname = "uname"
 
@@ -97,7 +93,7 @@ func (p *OneOffScriptParams) CheckAndSetDefaults() error {
 	}
 
 	if p.CDNBaseURL == "" {
-		p.CDNBaseURL = teleportCDNLocation
+		p.CDNBaseURL = teleport.CDNBaseURL()
 	}
 
 	if p.TeleportVersion == "" {

@@ -17,6 +17,8 @@ limitations under the License.
 package teleport
 
 import (
+	"cmp"
+	"os"
 	"strings"
 	"time"
 )
@@ -280,6 +282,22 @@ const (
 	// IterationsEnvVar sets tests iterations to run
 	IterationsEnvVar = "ITERATIONS"
 
+	// CDNBaseURLEnvVar overrides DefaultCDNBaseURL when generating install
+	// scripts. Useful for air-gapped installs or CDN mirrors.
+	CDNBaseURLEnvVar = "TELEPORT_CDN_BASE_URL"
+
+	// DefaultCDNBaseURL is the official Teleport CDN used to download
+	// teleport binaries from generated install scripts.
+	DefaultCDNBaseURL = "https://cdn.teleport.dev"
+)
+
+// CDNBaseURL returns the effective CDN base URL used to download Teleport
+// binaries: $TELEPORT_CDN_BASE_URL if set, otherwise [DefaultCDNBaseURL].
+func CDNBaseURL() string {
+	return cmp.Or(os.Getenv(CDNBaseURLEnvVar), DefaultCDNBaseURL)
+}
+
+const (
 	// DefaultTerminalWidth defines the default width of a server-side allocated
 	// pseudo TTY
 	DefaultTerminalWidth = 80
