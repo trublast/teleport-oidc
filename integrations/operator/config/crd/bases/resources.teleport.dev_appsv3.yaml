@@ -1,23 +1,23 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: teleportusers.resources.teleport.dev
+  name: teleportappsv3.resources.teleport.dev
 spec:
   group: resources.teleport.dev
   names:
-    kind: TeleportUser
-    listKind: TeleportUserList
-    plural: teleportusers
+    kind: TeleportAppV3
+    listKind: TeleportAppV3List
+    plural: teleportappsv3
     shortNames:
-    - user
-    - users
-    singular: teleportuser
+    - appv3
+    - appsv3
+    singular: teleportappv3
   scope: Namespaced
   versions:
-  - name: v2
+  - name: v1
     schema:
       openAPIV3Schema:
-        description: User is the Schema for the users API
+        description: AppV3 is the Schema for the appsv3 API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,80 +32,95 @@ spec:
           metadata:
             type: object
           spec:
-            description: User resource definition v2 from Teleport
+            description: App resource definition v3 from Teleport
             properties:
-              github_identities:
-                description: GithubIdentities list associated Github OAuth2 identities
-                  that let user log in using externally verified identity
-                items:
-                  properties:
-                    connector_id:
-                      description: ConnectorID is id of registered OIDC connector,
-                        e.g. 'google-example.com'
-                      type: string
-                    username:
-                      description: Username is username supplied by external identity
-                        provider
-                      type: string
-                  type: object
-                type: array
-              oidc_identities:
-                description: OIDCIdentities lists associated OpenID Connect identities
-                  that let user log in using externally verified identity
-                items:
-                  properties:
-                    connector_id:
-                      description: ConnectorID is id of registered OIDC connector,
-                        e.g. 'google-example.com'
-                      type: string
-                    username:
-                      description: Username is username supplied by external identity
-                        provider
-                      type: string
-                  type: object
-                type: array
-              roles:
-                description: Roles is a list of roles assigned to user
+              UserGroups:
+                description: UserGroups are a list of user group IDs that this app
+                  is associated with.
                 items:
                   type: string
                 nullable: true
                 type: array
-              saml_identities:
-                description: SAMLIdentities lists associated SAML identities that
-                  let user log in using externally verified identity
-                items:
-                  properties:
-                    connector_id:
-                      description: ConnectorID is id of registered OIDC connector,
-                        e.g. 'google-example.com'
-                      type: string
-                    username:
-                      description: Username is username supplied by external identity
-                        provider
-                      type: string
-                  type: object
-                type: array
-              traits:
-                additionalProperties:
-                  items:
+              aws:
+                description: AWS contains additional options for AWS applications.
+                nullable: true
+                properties:
+                  external_id:
+                    description: ExternalID is the AWS External ID used when assuming
+                      roles in this app.
                     type: string
-                  type: array
-                description: Traits are key/value pairs received from an identity
-                  provider (through OIDC claims or SAML assertions) or from a system
-                  administrator for local accounts. Traits are used to populate role
-                  variables.
                 type: object
-              trusted_device_ids:
-                description: TrustedDeviceIDs contains the IDs of trusted devices
-                  enrolled by the user. Managed by the Device Trust subsystem, avoid
-                  manual edits.
-                items:
-                  type: string
+              cloud:
+                description: Cloud identifies the cloud instance the app represents.
+                type: string
+              dynamic_labels:
+                description: DynamicLabels are the app's command labels.
+                properties:
+                  key:
+                    type: string
+                  value:
+                    nullable: true
+                    properties:
+                      command:
+                        description: Command is a command to run
+                        items:
+                          type: string
+                        nullable: true
+                        type: array
+                      period:
+                        description: Period is a time between command runs
+                        format: duration
+                        type: string
+                      result:
+                        description: Result captures standard output
+                        type: string
+                    type: object
+                type: object
+              insecure_skip_verify:
+                description: InsecureSkipVerify disables app's TLS certificate verification.
+                type: boolean
+              public_addr:
+                description: PublicAddr is the public address the application is accessible
+                  at.
+                type: string
+              rewrite:
+                description: Rewrite is a list of rewriting rules to apply to requests
+                  and responses.
                 nullable: true
-                type: array
+                properties:
+                  headers:
+                    description: Headers is a list of headers to inject when passing
+                      the request over to the application.
+                    items:
+                      properties:
+                        name:
+                          description: Name is the http header name.
+                          type: string
+                        value:
+                          description: Value is the http header value.
+                          type: string
+                      type: object
+                    nullable: true
+                    type: array
+                  jwt_claims:
+                    description: JWTClaims configures whether roles/traits are included
+                      in the JWT token.
+                    type: string
+                  redirect:
+                    description: Redirect defines a list of hosts which will be rewritten
+                      to the public address of the application if they occur in the
+                      "Location" header.
+                    items:
+                      type: string
+                    nullable: true
+                    type: array
+                type: object
+              uri:
+                description: URI is the web app endpoint.
+                type: string
             type: object
           status:
-            description: TeleportUserStatus defines the observed state of TeleportUser
+            description: TeleportAppV3Status defines the observed state of TeleportAppV3
             properties:
               conditions:
                 description: Conditions represent the latest available observations

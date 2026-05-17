@@ -53,7 +53,14 @@ type RootSchema struct {
 	versions   []SchemaVersion
 	name       string
 	pluralName string
-	kind       string
+	// teleportKind is the kind of the Teleport resource
+	teleportKind string
+	// kubernetesKind is the kind of the Kubernetes resource. This is the
+	// teleportKind, prefixed by "Teleport" and potentially suffixed by the
+	// version. Since v15, resources with multiple versions are exposed through
+	// different kinds. At some point we will suffix all kinds by the version
+	// and deprecate the old resources.
+	kubernetesKind string
 }
 
 type SchemaVersion struct {
@@ -90,8 +97,9 @@ func NewSchema() *Schema {
 }
 
 type resourceSchemaConfig struct {
-	versionOverride  string
-	customSpecFields []string
+	versionOverride    string
+	customSpecFields   []string
+	kindWithoutVersion bool
 }
 
 type resourceSchemaOption func(*resourceSchemaConfig)
@@ -99,6 +107,13 @@ type resourceSchemaOption func(*resourceSchemaConfig)
 func withVersionOverride(version string) resourceSchemaOption {
 	return func(cfg *resourceSchemaConfig) {
 		cfg.versionOverride = version
+	}
+}
+
+// legacyWithoutVersionInKindOverride is for backward compatibility only.
+func legacyWithoutVersionInKindOverride() resourceSchemaOption {
+	return func(cfg *resourceSchemaConfig) {
+		cfg.kindWithoutVersion = true
 	}
 }
 
@@ -159,20 +174,39 @@ func (generator *SchemaGenerator) addResource(file *File, name string, opts ...r
 	if cfg.versionOverride != "" {
 		resourceVersion = cfg.versionOverride
 	}
+	kubernetesKind := resourceKind
+	if !cfg.kindWithoutVersion {
+		kubernetesKind = resourceKind + strings.ToUpper(resourceVersion)
+	}
 	schema.Description = fmt.Sprintf("%s resource definition %s from Teleport", resourceKind, resourceVersion)
 
-	root, ok := generator.roots[resourceKind]
+	root, ok := generator.roots[kubernetesKind]
 	if !ok {
-		root = &RootSchema{
-			groupName:  generator.groupName,
-			kind:       resourceKind,
-			name:       strings.ToLower(resourceKind),
-			pluralName: strings.ToLower(english.PluralWord(2, resourceKind, "")),
+		pluralName := strings.ToLower(english.PluralWord(2, resourceKind, ""))
+		if !cfg.kindWithoutVersion {
+			pluralName = pluralName + resourceVersion
 		}
-		generator.roots[resourceKind] = root
+		root = &RootSchema{
+			groupName:      generator.groupName,
+			teleportKind:   resourceKind,
+			kubernetesKind: kubernetesKind,
+			name:           strings.ToLower(kubernetesKind),
+			pluralName:     pluralName,
+		}
+		generator.roots[kubernetesKind] = root
 	}
+
+	// For legacy CRs with a single version, we use the Teleport version as the
+	// Kubernetes API version
+	kubernetesVersion := resourceVersion
+	if !cfg.kindWithoutVersion {
+		// For new multi-version resources we always set the version to "v1" as
+		// the Teleport version is also in the CR kind.
+		kubernetesVersion = "v1"
+	}
+
 	root.versions = append(root.versions, SchemaVersion{
-		Version: resourceVersion,
+		Version: kubernetesVersion,
 		Schema:  schema,
 	})
 
@@ -363,8 +397,8 @@ func (root RootSchema) CustomResourceDefinition() apiextv1.CustomResourceDefinit
 		Spec: apiextv1.CustomResourceDefinitionSpec{
 			Group: root.groupName,
 			Names: apiextv1.CustomResourceDefinitionNames{
-				Kind:       k8sKindPrefix + root.kind,
-				ListKind:   k8sKindPrefix + root.kind + "List",
+				Kind:       k8sKindPrefix + root.kubernetesKind,
+				ListKind:   k8sKindPrefix + root.kubernetesKind + "List",
 				Plural:     strings.ToLower(k8sKindPrefix + root.pluralName),
 				Singular:   strings.ToLower(k8sKindPrefix + root.name),
 				ShortNames: root.getShortNames(),
@@ -406,7 +440,7 @@ func (root RootSchema) CustomResourceDefinition() apiextv1.CustomResourceDefinit
 				parser.NeedPackage(pkg)
 				statusType = crdtools.TypeIdent{
 					Package: pkg,
-					Name:    fmt.Sprintf("%s%sStatus", k8sKindPrefix, root.kind),
+					Name:    fmt.Sprintf("%s%sStatus", k8sKindPrefix, root.kubernetesKind),
 				}
 				// Kubernetes CRDs don't support $ref in openapi schemas, we need a flattened schema
 				parser.NeedFlattenedSchemaFor(statusType)
@@ -424,7 +458,7 @@ func (root RootSchema) CustomResourceDefinition() apiextv1.CustomResourceDefinit
 			Schema: &apiextv1.CustomResourceValidation{
 				OpenAPIV3Schema: &apiextv1.JSONSchemaProps{
 					Type:        "object",
-					Description: fmt.Sprintf("%s is the Schema for the %s API", root.kind, root.pluralName),
+					Description: fmt.Sprintf("%s is the Schema for the %s API", root.kubernetesKind, root.pluralName),
 					Properties: map[string]apiextv1.JSONSchemaProps{
 						"apiVersion": {
 							Type:        "string",

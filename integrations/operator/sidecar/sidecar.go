@@ -113,6 +113,7 @@ func createAuthClientConfig(opts Options) (*authclient.Config, error) {
 func sidecarRole(roleName string) (types.Role, error) {
 	return types.NewRole(roleName, types.RoleSpecV6{
 		Allow: types.RoleConditions{
+			AppLabels: types.Labels{types.Wildcard: []string{types.Wildcard}},
 			Rules: []types.Rule{
 				{
 					Resources: []string{
@@ -122,6 +123,7 @@ func sidecarRole(roleName string) (types.Role, error) {
 						types.KindLoginRule,
 						types.KindToken,
 						types.KindOktaImportRule,
+						types.KindApp,
 					},
 					Verbs: []string{"*"},
 				},

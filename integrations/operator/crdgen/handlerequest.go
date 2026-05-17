@@ -109,12 +109,12 @@ func generateSchema(file *File, groupName string, resp *gogoplugin.CodeGenerator
 	generator := NewSchemaGenerator(groupName)
 
 	resources := []resource{
-		{name: "UserV2"},
-		{name: "RoleV6", opts: []resourceSchemaOption{withVersionOverride(types.V5)}},
-		{name: "RoleV6"},
-		{name: "SAMLConnectorV2"},
-		{name: "OIDCConnectorV3"},
-		{name: "GithubConnectorV3"},
+		{name: "UserV2", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
+		{name: "RoleV6", opts: []resourceSchemaOption{withVersionOverride(types.V5), legacyWithoutVersionInKindOverride()}},
+		{name: "RoleV6", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
+		{name: "SAMLConnectorV2", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
+		{name: "OIDCConnectorV3", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
+		{name: "GithubConnectorV3", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
 		{
 			name: "LoginRule",
 			opts: []resourceSchemaOption{
@@ -123,10 +123,12 @@ func generateSchema(file *File, groupName string, resp *gogoplugin.CodeGenerator
 				// The LoginRule proto does not have a "spec" field, so force
 				// the CRD spec to include these fields from the root.
 				withCustomSpecFields([]string{"priority", "traits_expression", "traits_map"}),
+				legacyWithoutVersionInKindOverride(),
 			},
 		},
-		{name: "ProvisionTokenV2"},
-		{name: "OktaImportRuleV1"},
+		{name: "ProvisionTokenV2", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
+		{name: "AppV3", opts: []resourceSchemaOption{withVersionOverride(types.V3)}},
+		{name: "OktaImportRuleV1", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
 	}
 
 	for _, resource := range resources {
