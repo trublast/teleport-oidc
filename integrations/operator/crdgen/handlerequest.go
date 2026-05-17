@@ -128,6 +128,7 @@ func generateSchema(file *File, groupName string, resp *gogoplugin.CodeGenerator
 		},
 		{name: "ProvisionTokenV2", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
 		{name: "AppV3", opts: []resourceSchemaOption{withVersionOverride(types.V3)}},
+		{name: "DatabaseV3", opts: []resourceSchemaOption{withVersionOverride(types.V3)}},
 		{name: "OktaImportRuleV1", opts: []resourceSchemaOption{legacyWithoutVersionInKindOverride()}},
 	}
 
